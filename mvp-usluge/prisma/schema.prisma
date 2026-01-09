@@ -1,0 +1,303 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// ENUMERACIJE
+// ============================================
+
+enum UserRole {
+  CLIENT      // Obični korisnik - zakazuje usluge
+  FREELANCER  // Samostalni radnik - pruža usluge
+  COMPANY     // Uslužno preduzeće - ima radnike
+  ADMIN       // Administrator sistema
+}
+
+enum BookingStatus {
+  PENDING    // Na čekanju - čeka potvrdu pružaoca
+  CONFIRMED  // Potvrđeno - pružalac prihvatio
+  COMPLETED  // Završeno - usluga obavljena
+  CANCELLED  // Otkazano - klijent ili pružalac otkazao
+  REJECTED   // Odbijeno - pružalac odbio zahtev
+}
+
+enum PricingType {
+  FIXED   // Fiksna cena
+  HOURLY  // Po satu
+}
+
+enum LocationType {
+  ONSITE           // Na lokaciji pružaoca
+  CLIENT_LOCATION  // Na adresi klijenta
+  ONLINE           // Online (video poziv, remote)
+}
+
+// ============================================
+// MODEL 1: USER (Korisnici sistema)
+// ============================================
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  password      String   // Heširana lozinka (bcrypt)
+  firstName     String
+  lastName      String
+  phone         String?
+  role          UserRole @default(CLIENT)
+  
+  // Polja specifična za pružaoce usluga
+  companyName   String?  // Samo za COMPANY
+  pib           String?  // PIB preduzeća
+  bio           String?  @db.Text // Biografija/opis
+  address       String?
+  city          String?
+  profileImage  String?  // URL slike
+  
+  // Verifikacija i status
+  isVerified    Boolean  @default(false)
+  isActive      Boolean  @default(true)
+  emailVerified DateTime?
+  
+  // Rejting (automatski izračunava iz Review-a)
+  averageRating Decimal? @db.Decimal(3, 2) // npr. 4.75
+  totalReviews  Int      @default(0)
+  
+  // Timestamps
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // ============================================
+  // RELACIJE
+  // ============================================
+  
+  // Usluge koje pružalac nudi (FREELANCER ili COMPANY)
+  providedServices Service[] @relation("ServiceProvider")
+  
+  // Rezervacije gde je korisnik klijent
+  bookingsAsClient Booking[] @relation("ClientBookings")
+  
+  // Rezervacije gde je korisnik pružalac
+  bookingsAsProvider Booking[] @relation("ProviderBookings")
+  
+  // Ocene koje je korisnik napisao (kao klijent)
+  writtenReviews Review[] @relation("ReviewAuthor")
+  
+  // Ocene koje je korisnik dobio (kao pružalac)
+  receivedReviews Review[] @relation("ReviewTarget")
+  
+  // Radnici koje preduzeće zapošljava (samo COMPANY)
+  employees Worker[] @relation("CompanyEmployees")
+  
+  @@index([email])
+  @@index([role])
+  @@map("users")
+}
+
+// ============================================
+// MODEL 2: WORKER (Radnici preduzeća)
+// ============================================
+
+model Worker {
+  id              String   @id @default(uuid())
+  firstName       String
+  lastName        String
+  email           String?
+  phone           String?
+  position        String   // Pozicija (npr. "Senior frizer")
+  specializations String[] // Lista specijalizacija
+  profileImage    String?
+  isActive        Boolean  @default(true)
+  
+  // Veza sa preduzećem
+  companyId       String
+  company         User     @relation("CompanyEmployees", fields: [companyId], references: [id], onDelete: Cascade)
+  
+  // Timestamps
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // ============================================
+  // RELACIJE
+  // ============================================
+  
+  // Rezervacije na koje je radnik dodeljen
+  bookings        Booking[] @relation("AssignedWorker")
+  
+  // Many-to-many veza sa uslugama (radnik može pružati više usluga)
+  services        Service[] @relation("WorkerServices")
+  
+  @@index([companyId])
+  @@map("workers")
+}
+
+// ============================================
+// MODEL 3: CATEGORY (Kategorije usluga)
+// ============================================
+
+model Category {
+  id          String     @id @default(uuid())
+  name        String     @unique
+  slug        String     @unique // URL-friendly naziv (npr. "popravke-kuce")
+  description String?    @db.Text
+  iconUrl     String?    // URL ikone kategorije
+  
+  // Self-referencing za hijerarhiju (kategorije i podkategorije)
+  parentId    String?
+  parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children    Category[] @relation("CategoryHierarchy")
+  
+  // Timestamps
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  
+  // ============================================
+  // RELACIJE
+  // ============================================
+  
+  // Usluge u ovoj kategoriji
+  services    Service[]  @relation("CategoryServices")
+  
+  @@index([slug])
+  @@index([parentId])
+  @@map("categories")
+}
+
+// ============================================
+// MODEL 4: SERVICE (Usluge)
+// ============================================
+
+model Service {
+  id           String       @id @default(uuid())
+  name         String
+  description  String       @db.Text
+  price        Decimal      @db.Decimal(10, 2) // Cena (npr. 1500.00 RSD)
+  pricingType  PricingType  @default(FIXED)
+  duration     Int          // Trajanje u minutima
+  locationType LocationType @default(ONSITE)
+  
+  // Slike usluge (max 3)
+  images       String[]     // Array URL-ova
+  
+  // Status
+  isActive     Boolean      @default(true)
+  
+  // Veza sa pružaocem (FREELANCER ili COMPANY)
+  providerId   String
+  provider     User         @relation("ServiceProvider", fields: [providerId], references: [id], onDelete: Cascade)
+  
+  // Veza sa kategorijom
+  categoryId   String
+  category     Category     @relation("CategoryServices", fields: [categoryId], references: [id])
+  
+  // Timestamps
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  
+  // ============================================
+  // RELACIJE
+  // ============================================
+  
+  // Rezervacije za ovu uslugu
+  bookings     Booking[]    @relation("ServiceBookings")
+  
+  // Radnici koji mogu pružati ovu uslugu (many-to-many)
+  workers      Worker[]     @relation("WorkerServices")
+  
+  @@index([providerId])
+  @@index([categoryId])
+  @@index([isActive])
+  @@map("services")
+}
+
+// ============================================
+// MODEL 5: BOOKING (Rezervacije)
+// ============================================
+
+model Booking {
+  id             String        @id @default(uuid())
+  
+  // Datum i vreme
+  scheduledDate  DateTime      // Datum zakazivanja
+  scheduledTime  String        // Vreme (npr. "14:00")
+  
+  // Status rezervacije
+  status         BookingStatus @default(PENDING)
+  
+  // Napomene
+  clientNotes    String?       @db.Text // Napomena klijenta
+  providerNotes  String?       @db.Text // Napomena pružaoca (razlog odbijanja)
+  
+  // Veza sa klijentom
+  clientId       String
+  client         User          @relation("ClientBookings", fields: [clientId], references: [id], onDelete: Cascade)
+  
+  // Veza sa pružaocem usluge
+  providerId     String
+  provider       User          @relation("ProviderBookings", fields: [providerId], references: [id], onDelete: Cascade)
+  
+  // Veza sa uslugom
+  serviceId      String
+  service        Service       @relation("ServiceBookings", fields: [serviceId], references: [id])
+  
+  // Dodeljeni radnik (opciono, samo za COMPANY)
+  workerId       String?
+  worker         Worker?       @relation("AssignedWorker", fields: [workerId], references: [id], onDelete: SetNull)
+  
+  // Timestamps
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  
+  // ============================================
+  // RELACIJE
+  // ============================================
+  
+  // Ocena za ovu rezervaciju (opciono, samo ako je COMPLETED)
+  review         Review?       @relation("BookingReview")
+  
+  @@index([clientId])
+  @@index([providerId])
+  @@index([serviceId])
+  @@index([status])
+  @@index([scheduledDate])
+  @@map("bookings")
+}
+
+// ============================================
+// MODEL 6: REVIEW (Ocene i komentari)
+// ============================================
+
+model Review {
+  id         String   @id @default(uuid())
+  rating     Int      // Ocena 1-5 zvezdica
+  comment    String?  @db.Text
+  response   String?  @db.Text // Odgovor pružaoca na komentar
+  
+  // Veza sa klijentom (autor ocene)
+  authorId   String
+  author     User     @relation("ReviewAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  
+  // Veza sa pružaocem (prima ocenu)
+  targetId   String
+  target     User     @relation("ReviewTarget", fields: [targetId], references: [id], onDelete: Cascade)
+  
+  // Veza sa rezervacijom
+  bookingId  String   @unique
+  booking    Booking  @relation("BookingReview", fields: [bookingId], references: [id], onDelete: Cascade)
+  
+  // Timestamps
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  
+  @@index([authorId])
+  @@index([targetId])
+  @@index([rating])
+  @@map("reviews")
+}
