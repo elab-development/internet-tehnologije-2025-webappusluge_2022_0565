@@ -65,6 +65,8 @@ model User {
   isVerified    Boolean  @default(false)
   isActive      Boolean  @default(true)
   emailVerified DateTime?
+  verifiedAt    DateTime? // NOVA KOLONA zarad migracije - datum kada je preduzeće verifikovano
+
   
   // Rejting (automatski izračunava iz Review-a)
   averageRating Decimal? @db.Decimal(3, 2) // npr. 4.75
@@ -210,6 +212,9 @@ model Service {
   
   // Radnici koji mogu pružati ovu uslugu (many-to-many)
   workers      Worker[]     @relation("WorkerServices")
+
+  // Unique constraint (kombinacija providerId + name)
+  @@unique([providerId, name], name: "unique_provider_service_name")
   
   @@index([providerId])
   @@index([categoryId])
