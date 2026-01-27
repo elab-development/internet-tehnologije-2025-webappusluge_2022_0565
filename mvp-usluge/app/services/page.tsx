@@ -40,10 +40,26 @@ interface Service {
   };
 }
 
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  iconUrl: string | null;
+  servicesCount: number;
+  childrenCount: number;
+  children: {
+    id: string;
+    name: string;
+    slug: string;
+    iconUrl: string | null;
+    servicesCount: number;
+  }[];
+}
+
 /**
  * Services List Page (Client Component)
- * Koristi useEffect hook za fetch podataka
- * Koristi useState hook za search i filter
+ * - useEffect za fetch podataka
+ * - useState za search i filtere
  */
 export default function ServicesPage() {
   // ============================================
@@ -55,8 +71,12 @@ export default function ServicesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredServices, setFilteredServices] = useState<Service[]>([]);
 
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+
   // ============================================
-  // FETCH PODATAKA (useEffect hook)
+  // FETCH SERVICES (initial load + fallback)
+  // (Ovaj useEffect će odraditi inicijalni fetch kada nema filtera po kategoriji)
   // ============================================
   useEffect(() => {
     const fetchServices = async () => {
@@ -79,7 +99,7 @@ export default function ServicesPage() {
     };
 
     fetchServices();
-  }, []); // Prazan dependency array - poziva se samo jednom pri mount-u
+  }, []);
 
   // ============================================
   // SEARCH FILTER (useEffect hook)
@@ -99,7 +119,7 @@ export default function ServicesPage() {
     );
 
     setFilteredServices(filtered);
-  }, [searchQuery, services]); // Re-run kada se promeni searchQuery ili services
+  }, [searchQuery, services]);
 
   // ============================================
   // HELPER FUNCTIONS
@@ -114,18 +134,76 @@ export default function ServicesPage() {
   const getLocationBadge = (locationType: string) => {
     const styles = {
       ONSITE: { bg: "bg-blue-100", text: "text-blue-800", label: "Na lokaciji" },
-      CLIENT_LOCATION: { bg: "bg-green-100", text: "text-green-800", label: "Kod klijenta" },
+      CLIENT_LOCATION: {
+        bg: "bg-green-100",
+        text: "text-green-800",
+        label: "Kod klijenta",
+      },
       ONLINE: { bg: "bg-purple-100", text: "text-purple-800", label: "Online" },
     };
 
     const style = styles[locationType as keyof typeof styles] || styles.ONSITE;
 
     return (
-      <span className={`px-2 py-1 text-xs font-medium rounded-full ${style.bg} ${style.text}`}>
+      <span
+        className={`px-2 py-1 text-xs font-medium rounded-full ${style.bg} ${style.text}`}
+      >
         {style.label}
       </span>
     );
   };
+
+  // ============================================
+  // FETCH KATEGORIJA
+  // ============================================
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch("/api/categories?parentId=null");
+        const data = await response.json();
+
+        if (response.ok) {
+          setCategories(data.data.categories);
+        }
+      } catch (err) {
+        console.error("Greška pri učitavanju kategorija:", err);
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
+  // ============================================
+  // FETCH USLUGA SA FILTEROM PO KATEGORIJI
+  // ============================================
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        setIsLoading(true);
+
+        let url = "/api/services";
+        if (selectedCategory) {
+          url += `?categoryId=${selectedCategory}`;
+        }
+
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || "Greška pri učitavanju usluga");
+        }
+
+        setServices(data.data.services);
+        setFilteredServices(data.data.services);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Nepoznata greška");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchServices();
+  }, [selectedCategory]);
 
   // ============================================
   // RENDER - LOADING STATE
@@ -223,6 +301,63 @@ export default function ServicesPage() {
               }
               fullWidth
             />
+          </div>
+
+          {/* Category Filter */}
+          <div className="mt-6">
+            <h3 className="text-sm font-medium text-gray-700 mb-3">
+              Filtriraj po kategoriji:
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant={selectedCategory === null ? "primary" : "outline"}
+                size="sm"
+                onClick={() => setSelectedCategory(null)}
+              >
+                Sve kategorije
+              </Button>
+
+              {categories.map((category) => (
+                <div key={category.id} className="relative group">
+                  <Button
+                    variant={
+                      selectedCategory === category.id ? "primary" : "outline"
+                    }
+                    size="sm"
+                    onClick={() => setSelectedCategory(category.id)}
+                  >
+                    {category.iconUrl && (
+                      <span className="mr-1">{category.iconUrl}</span>
+                    )}
+                    {category.name}
+                    <span className="ml-1 text-xs opacity-70">
+                      ({category.servicesCount})
+                    </span>
+                  </Button>
+
+                  {/* Dropdown za podkategorije */}
+                  {category.children.length > 0 && (
+                    <div className="hidden group-hover:block absolute top-full left-0 mt-1 bg-white border rounded-lg shadow-lg z-10 min-w-[200px]">
+                      {category.children.map((child) => (
+                        <button
+                          key={child.id}
+                          onClick={() => setSelectedCategory(child.id)}
+                          className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+                        >
+                          {child.iconUrl && (
+                            <span className="mr-2">{child.iconUrl}</span>
+                          )}
+                          {child.name}
+                          <span className="ml-1 text-xs text-gray-500">
+                            ({child.servicesCount})
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -327,7 +462,9 @@ export default function ServicesPage() {
                       {formatPrice(Number(service.price))}
                     </p>
                     <p className="text-xs text-gray-500">
-                      {service.pricingType === "HOURLY" ? "po satu" : "fiksno"}
+                      {service.pricingType === "HOURLY"
+                        ? "po satu"
+                        : "fiksno"}
                     </p>
                   </div>
                   <div className="text-right">
