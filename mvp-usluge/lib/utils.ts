@@ -1,31 +1,37 @@
-import { type ClassValue, clsx } from "clsx";
-import { twMerge } from "tailwind-merge";
+import { prisma } from "@/lib/db/prisma";
 
 /**
- * Utility funkcija za spajanje Tailwind klasa
- * Koristi se za dinamičko stilizovanje komponenti
+ * Izračunava i ažurira prosečnu ocenu korisnika
  */
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
+export async function updateUserAverageRating(userId: string): Promise<void> {
+  // Pronađi sve ocene koje je korisnik dobio
+  const reviews = await prisma.review.findMany({
+    where: { targetId: userId },
+    select: { rating: true },
+  });
 
-/**
- * Formatiranje cene u EUR format
- */
-export function formatPrice(price: number): string {
-  return new Intl.NumberFormat('sr-RS', {
-    style: 'currency',
-    currency: 'RSD'
-  }).format(price);
-}
+  if (reviews.length === 0) {
+    // Ako nema ocena, postavi na null
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        averageRating: null,
+        totalReviews: 0,
+      },
+    });
+    return;
+  }
 
-/**
- * Formatiranje datuma
- */
-export function formatDate(date: Date): string {
-  return new Intl.DateTimeFormat('sr-RS', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric'
-  }).format(date);
+  // Izračunaj prosek
+  const sum = reviews.reduce((acc, review) => acc + review.rating, 0);
+  const average = sum / reviews.length;
+
+  // Ažuriraj korisnika
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      averageRating: Math.round(average * 100) / 100, // Zaokruži na 2 decimale
+      totalReviews: reviews.length,
+    },
+  });
 }
