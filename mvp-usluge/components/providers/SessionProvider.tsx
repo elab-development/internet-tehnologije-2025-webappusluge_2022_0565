@@ -1,16 +1,18 @@
 "use client";
 
 import { SessionProvider as NextAuthSessionProvider } from "next-auth/react";
+import type { Session } from "next-auth";
 import { ReactNode } from "react";
 
 interface Props {
   children: ReactNode;
+  session: Session | null;
 }
 
-/**
- * Client-side SessionProvider wrapper
- * Omogućava pristup session-u u client komponentama
- */
-export default function SessionProvider({ children }: Props) {
-  return <NextAuthSessionProvider>{children}</NextAuthSessionProvider>;
+export default function SessionProvider({ children, session }: Props) {
+  return (
+    <NextAuthSessionProvider session={session}>
+      {children}
+    </NextAuthSessionProvider>
+  );
 }
