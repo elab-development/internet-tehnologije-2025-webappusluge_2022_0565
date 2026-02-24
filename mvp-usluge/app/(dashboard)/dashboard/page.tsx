@@ -9,6 +9,7 @@ import Card, {
 } from "@/components/ui/Card";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
+import DashboardCharts from "./DashboardCharts";
 
 /**
  * Dashboard Page (Server Component)
@@ -101,9 +102,8 @@ export default async function DashboardPage() {
 
     return (
       <span
-        className={`px-2 py-1 text-xs font-medium rounded-full ${
-          styles[status as keyof typeof styles]
-        }`}
+        className={`px-2 py-1 text-xs font-medium rounded-full ${styles[status as keyof typeof styles]
+          }`}
       >
         {status}
       </span>
@@ -135,6 +135,11 @@ export default async function DashboardPage() {
               </p>
             </div>
             <div className="flex gap-2">
+              {user.role === 'ADMIN' && (
+                <Link href="/admin">
+                  <Button variant="outline">Admin Panel</Button>
+                </Link>
+              )}
               <Link href="/services">
                 <Button variant="outline">Pregledaj usluge</Button>
               </Link>
@@ -337,6 +342,9 @@ export default async function DashboardPage() {
           )}
         </div>
 
+        {/* Charts Section (samo za pružaoce) */}
+        <DashboardCharts userRole={user.role} />
+
         {/* Recent Activity */}
         <Card variant="bordered">
           <CardHeader>
@@ -401,7 +409,7 @@ export default async function DashboardPage() {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {user.role === "CLIENT"
                             ? booking.provider.companyName ||
-                              `${booking.provider.firstName} ${booking.provider.lastName}`
+                            `${booking.provider.firstName} ${booking.provider.lastName}`
                             : `${booking.client.firstName} ${booking.client.lastName}`}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
