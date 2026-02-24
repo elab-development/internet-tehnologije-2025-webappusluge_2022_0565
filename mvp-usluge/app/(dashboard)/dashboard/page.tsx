@@ -361,10 +361,17 @@ export default async function DashboardPage() {
         {/* Recent Activity */}
         <Card variant="bordered">
           <CardHeader>
-            <CardTitle>Nedavne aktivnosti</CardTitle>
-            <CardDescription>
-              Pregled poslednjih 5 rezervacija
-            </CardDescription>
+            <div className="flex justify-between items-center">
+              <div>
+                <CardTitle>Nedavne aktivnosti</CardTitle>
+                <CardDescription>
+                  Pregled poslednjih 5 rezervacija
+                </CardDescription>
+              </div>
+              <Link href="/dashboard/bookings">
+                <Button variant="outline" size="sm">Prikaži sve</Button>
+              </Link>
+            </div>
           </CardHeader>
           <CardContent>
             {recentBookings.length === 0 ? (

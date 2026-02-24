@@ -84,6 +84,7 @@ export default function ServicesPage() {
 
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
+  const [searchRadius, setSearchRadius] = useState<number>(50);
 
   // ============================================
   // FETCH SERVICES (initial load + fallback)
@@ -106,6 +107,10 @@ export default function ServicesPage() {
     }
   }, []);
 
+  const [minPrice, setMinPrice] = useState<string>("");
+  const [maxPrice, setMaxPrice] = useState<string>("");
+  const [minRating, setMinRating] = useState<string>("");
+
   const fetchServices = async () => {
     try {
       setIsLoading(true);
@@ -117,11 +122,15 @@ export default function ServicesPage() {
         params.append('categoryId', selectedCategory);
       }
 
+      if (minPrice) params.append('minPrice', minPrice);
+      if (maxPrice) params.append('maxPrice', maxPrice);
+      if (minRating) params.append('minRating', minRating);
+
       // 🆕 Dodaj geolokacijske parametre
       if (userLocation) {
         params.append('latitude', userLocation.lat.toString());
         params.append('longitude', userLocation.lon.toString());
-        params.append('radius', '50'); // 50km radijus
+        params.append('radius', searchRadius.toString());
       }
 
       if (params.toString()) {
@@ -147,7 +156,7 @@ export default function ServicesPage() {
   // FETCH SERVICES
   useEffect(() => {
     fetchServices();
-  }, [selectedCategory, userLocation]);
+  }, [selectedCategory, userLocation, minPrice, maxPrice, minRating, searchRadius]);
 
   // ============================================
   // SEARCH FILTER (useEffect hook)
@@ -220,12 +229,6 @@ export default function ServicesPage() {
 
     fetchCategories();
   }, []);
-
-  // ============================================
-  // FETCH USLUGA SA FILTEROM PO KATEGORIJI
-  // ============================================
-  // Duplicate fetchServices useEffect removed in favor of single fetching logic above
-
 
   // ============================================
   // RENDER - LOADING STATE
@@ -344,59 +347,112 @@ export default function ServicesPage() {
           </div>
 
           {/* Category Filter */}
-          <div className="mt-6">
-            <h3 className="text-sm font-medium text-gray-700 mb-3">
-              Filtriraj po kategoriji:
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant={selectedCategory === null ? "primary" : "outline"}
-                size="sm"
-                onClick={() => setSelectedCategory(null)}
-              >
-                Sve kategorije
-              </Button>
+          <div className="mt-6 flex flex-wrap lg:flex-nowrap gap-6">
+            <div className="flex-1">
+              <h3 className="text-sm font-medium text-gray-700 mb-3">
+                Filtriraj po kategoriji:
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant={selectedCategory === null ? "primary" : "outline"}
+                  size="sm"
+                  onClick={() => setSelectedCategory(null)}
+                >
+                  Sve kategorije
+                </Button>
 
-              {categories.map((category) => (
-                <div key={category.id} className="relative group">
-                  <Button
-                    variant={
-                      selectedCategory === category.id ? "primary" : "outline"
-                    }
-                    size="sm"
-                    onClick={() => setSelectedCategory(category.id)}
-                  >
-                    {category.iconUrl && (
-                      <span className="mr-1">{category.iconUrl}</span>
+                {categories.map((category) => (
+                  <div key={category.id} className="relative group">
+                    <Button
+                      variant={
+                        selectedCategory === category.id ? "primary" : "outline"
+                      }
+                      size="sm"
+                      onClick={() => setSelectedCategory(category.id)}
+                    >
+                      {category.iconUrl && (
+                        <span className="mr-1">{category.iconUrl}</span>
+                      )}
+                      {category.name}
+                      <span className="ml-1 text-xs opacity-70">
+                        ({category.servicesCount})
+                      </span>
+                    </Button>
+
+                    {/* Dropdown za podkategorije */}
+                    {category.children.length > 0 && (
+                      <div className="hidden group-hover:block absolute top-full left-0 mt-1 bg-white border rounded-lg shadow-lg z-10 min-w-[200px]">
+                        {category.children.map((child) => (
+                          <button
+                            key={child.id}
+                            onClick={() => setSelectedCategory(child.id)}
+                            className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+                          >
+                            {child.iconUrl && (
+                              <span className="mr-2">{child.iconUrl}</span>
+                            )}
+                            {child.name}
+                            <span className="ml-1 text-xs text-gray-500">
+                              ({child.servicesCount})
+                            </span>
+                          </button>
+                        ))}
+                      </div>
                     )}
-                    {category.name}
-                    <span className="ml-1 text-xs opacity-70">
-                      ({category.servicesCount})
-                    </span>
-                  </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
 
-                  {/* Dropdown za podkategorije */}
-                  {category.children.length > 0 && (
-                    <div className="hidden group-hover:block absolute top-full left-0 mt-1 bg-white border rounded-lg shadow-lg z-10 min-w-[200px]">
-                      {category.children.map((child) => (
-                        <button
-                          key={child.id}
-                          onClick={() => setSelectedCategory(child.id)}
-                          className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
-                        >
-                          {child.iconUrl && (
-                            <span className="mr-2">{child.iconUrl}</span>
-                          )}
-                          {child.name}
-                          <span className="ml-1 text-xs text-gray-500">
-                            ({child.servicesCount})
-                          </span>
-                        </button>
-                      ))}
+            <div className="border-l pl-6 hidden lg:block"></div>
+
+            <div className="w-full lg:w-72">
+              <h3 className="text-sm font-medium text-gray-700 mb-3">
+                Cena i Ocena:
+              </h3>
+              <div className="space-y-3">
+                <div className="flex gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Min cena"
+                    value={minPrice}
+                    onChange={(e) => setMinPrice(e.target.value)}
+                    className="w-full"
+                  />
+                  <Input
+                    type="number"
+                    placeholder="Max cena"
+                    value={maxPrice}
+                    onChange={(e) => setMaxPrice(e.target.value)}
+                    className="w-full"
+                  />
+                </div>
+                <div>
+                  <Input
+                    type="number"
+                    max="5"
+                    min="1"
+                    placeholder="Minimalna ocena (1-5)"
+                    value={minRating}
+                    onChange={(e) => setMinRating(e.target.value)}
+                    className="w-full"
+                  />
+                  {userLocation && (
+                    <div className="pt-2">
+                      <label className="block text-xs font-semibold text-gray-500 mb-1">Radijus pretrage (km)</label>
+                      <Input
+                        type="number"
+                        min="1"
+                        max="500"
+                        placeholder="Radijus (km)"
+                        value={searchRadius.toString()}
+                        onChange={(e) => setSearchRadius(Number(e.target.value) || 50)}
+                        className="w-full"
+                      />
                     </div>
                   )}
                 </div>
-              ))}
+              </div>
             </div>
           </div>
         </div>

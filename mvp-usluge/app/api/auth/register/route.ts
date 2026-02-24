@@ -174,11 +174,17 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // 🆕 Pošalji welcome email
+    // 🆕 Pošalji welcome i verifikacioni email
     try {
-      await sendWelcomeEmail(user.email, user.firstName);
+      if (process.env.RESEND_API_KEY) {
+        const { signToken } = await import('@/lib/jwt');
+        const token = signToken({ email: user.email, purpose: 'verify_email' }, '24h');
+
+        const { sendEmailVerification } = await import('@/lib/email');
+        await sendEmailVerification(user.email, user.firstName, token);
+      }
     } catch (error) {
-      console.error('Failed to send welcome email:', error);
+      console.error('Failed to send verification email:', error);
       // Ne blokiraj registraciju ako email ne uspe
     }
 

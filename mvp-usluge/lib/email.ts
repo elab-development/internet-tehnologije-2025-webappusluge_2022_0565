@@ -8,34 +8,34 @@ const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'MVP Usluge <noreply@mvp-usl
  * Helper funkcija za slanje email-a
  */
 async function sendEmail(to: string, subject: string, html: string) {
-    try {
-        const { data, error } = await resend.emails.send({
-            from: FROM_EMAIL,
-            to,
-            subject,
-            html,
-        });
+  try {
+    const { data, error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to,
+      subject,
+      html,
+    });
 
-        if (error) {
-            console.error('Email sending error:', error);
-            return { success: false, error };
-        }
-
-        console.log('Email sent successfully:', data);
-        return { success: true, data };
-    } catch (error) {
-        console.error('Email sending error:', error);
-        return { success: false, error };
+    if (error) {
+      console.error('Email sending error:', error);
+      return { success: false, error };
     }
+
+    console.log('Email sent successfully:', data);
+    return { success: true, data };
+  } catch (error) {
+    console.error('Email sending error:', error);
+    return { success: false, error };
+  }
 }
 
 /**
  * 1. Welcome email nakon registracije
  */
 export async function sendWelcomeEmail(to: string, firstName: string) {
-    const subject = 'Dobrodošli na MVP Usluge! 🎉';
+  const subject = 'Dobrodošli na MVP Usluge! 🎉';
 
-    const html = `
+  const html = `
     <!DOCTYPE html>
     <html>
       <head>
@@ -78,27 +78,27 @@ export async function sendWelcomeEmail(to: string, firstName: string) {
     </html>
   `;
 
-    return sendEmail(to, subject, html);
+  return sendEmail(to, subject, html);
 }
 
 /**
  * 2. Notifikacija pružaocu o novoj rezervaciji
  */
 export async function sendNewBookingNotification(
-    providerEmail: string,
-    providerName: string,
-    bookingDetails: {
-        clientName: string;
-        serviceName: string;
-        scheduledDate: string;
-        scheduledTime: string;
-        clientNotes?: string;
-        bookingId: string;
-    }
+  providerEmail: string,
+  providerName: string,
+  bookingDetails: {
+    clientName: string;
+    serviceName: string;
+    scheduledDate: string;
+    scheduledTime: string;
+    clientNotes?: string;
+    bookingId: string;
+  }
 ) {
-    const subject = '🔔 Nova rezervacija!';
+  const subject = '🔔 Nova rezervacija!';
 
-    const html = `
+  const html = `
     <!DOCTYPE html>
     <html>
       <head>
@@ -146,27 +146,27 @@ export async function sendNewBookingNotification(
     </html>
   `;
 
-    return sendEmail(providerEmail, subject, html);
+  return sendEmail(providerEmail, subject, html);
 }
 
 /**
  * 3. Potvrda rezervacije klijentu
  */
 export async function sendBookingConfirmation(
-    clientEmail: string,
-    clientName: string,
-    bookingDetails: {
-        providerName: string;
-        serviceName: string;
-        scheduledDate: string;
-        scheduledTime: string;
-        providerPhone?: string;
-        providerAddress?: string;
-    }
+  clientEmail: string,
+  clientName: string,
+  bookingDetails: {
+    providerName: string;
+    serviceName: string;
+    scheduledDate: string;
+    scheduledTime: string;
+    providerPhone?: string;
+    providerAddress?: string;
+  }
 ) {
-    const subject = '✅ Rezervacija potvrđena!';
+  const subject = '✅ Rezervacija potvrđena!';
 
-    const html = `
+  const html = `
     <!DOCTYPE html>
     <html>
       <head>
@@ -211,26 +211,26 @@ export async function sendBookingConfirmation(
     </html>
   `;
 
-    return sendEmail(clientEmail, subject, html);
+  return sendEmail(clientEmail, subject, html);
 }
 
 /**
  * 4. Notifikacija o otkazivanju rezervacije
  */
 export async function sendBookingCancellation(
-    to: string,
-    recipientName: string,
-    bookingDetails: {
-        serviceName: string;
-        scheduledDate: string;
-        scheduledTime: string;
-        cancelledBy: 'client' | 'provider';
-        reason?: string;
-    }
+  to: string,
+  recipientName: string,
+  bookingDetails: {
+    serviceName: string;
+    scheduledDate: string;
+    scheduledTime: string;
+    cancelledBy: 'client' | 'provider';
+    reason?: string;
+  }
 ) {
-    const subject = '❌ Rezervacija otkazana';
+  const subject = '❌ Rezervacija otkazana';
 
-    const html = `
+  const html = `
     <!DOCTYPE html>
     <html>
       <head>
@@ -267,27 +267,27 @@ export async function sendBookingCancellation(
     </html>
   `;
 
-    return sendEmail(to, subject, html);
+  return sendEmail(to, subject, html);
 }
 
 /**
  * 5. Podsetnik 24h pre termina
  */
 export async function sendBookingReminder(
-    clientEmail: string,
-    clientName: string,
-    bookingDetails: {
-        providerName: string;
-        serviceName: string;
-        scheduledDate: string;
-        scheduledTime: string;
-        providerPhone?: string;
-        providerAddress?: string;
-    }
+  clientEmail: string,
+  clientName: string,
+  bookingDetails: {
+    providerName: string;
+    serviceName: string;
+    scheduledDate: string;
+    scheduledTime: string;
+    providerPhone?: string;
+    providerAddress?: string;
+  }
 ) {
-    const subject = '⏰ Podsetnik: Sutra imate zakazanu uslugu';
+  const subject = '⏰ Podsetnik: Sutra imate zakazanu uslugu';
 
-    const html = `
+  const html = `
     <!DOCTYPE html>
     <html>
       <head>
@@ -326,28 +326,28 @@ export async function sendBookingReminder(
     </html>
   `;
 
-    return sendEmail(clientEmail, subject, html);
+  return sendEmail(clientEmail, subject, html);
 }
 
 /**
  * 6. Notifikacija pružaocu o novoj oceni
  */
 export async function sendNewReviewNotification(
-    providerEmail: string,
-    providerName: string,
-    reviewDetails: {
-        clientName: string;
-        serviceName: string;
-        rating: number;
-        comment?: string;
-        reviewId: string;
-    }
+  providerEmail: string,
+  providerName: string,
+  reviewDetails: {
+    clientName: string;
+    serviceName: string;
+    rating: number;
+    comment?: string;
+    reviewId: string;
+  }
 ) {
-    const subject = '⭐ Nova ocena!';
+  const subject = '⭐ Nova ocena!';
 
-    const stars = '⭐'.repeat(reviewDetails.rating);
+  const stars = '⭐'.repeat(reviewDetails.rating);
 
-    const html = `
+  const html = `
     <!DOCTYPE html>
     <html>
       <head>
@@ -390,5 +390,84 @@ export async function sendNewReviewNotification(
     </html>
   `;
 
-    return sendEmail(providerEmail, subject, html);
+  return sendEmail(providerEmail, subject, html);
+}
+
+/**
+ * 7. Verifikacija email adrese
+ */
+export async function sendEmailVerification(to: string, firstName: string, token: string) {
+  const subject = 'Potvrda email adrese';
+  const verificationUrl = `${process.env.NEXTAUTH_URL}/auth/verify-email?token=${token}`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: #3b82f6; color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+          .content { background: #f9fafb; padding: 30px; text-align: center; border-radius: 0 0 8px 8px; }
+          .button { display: inline-block; background: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>Potvrdite vašu email adresu</h1>
+          </div>
+          <div class="content">
+            <p>Zdravo ${firstName},</p>
+            <p>Kliknite na dugme ispod kako biste potvrdili vašu email adresu i aktivirali nalog.</p>
+            <a href="${verificationUrl}" class="button" style="color: white;">Potvrdi Email</a>
+            <p>Ako niste kreirali nalog na našoj platformi, možete ignorisati ovu poruku.</p>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+
+  return sendEmail(to, subject, html);
+}
+
+/**
+ * 8. Resetovanje lozinke
+ */
+export async function sendPasswordReset(to: string, firstName: string, token: string) {
+  const subject = 'Resetovanje lozinke';
+  const resetUrl = `${process.env.NEXTAUTH_URL}/auth/reset-password?token=${token}`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: #ef4444; color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+          .content { background: #f9fafb; padding: 30px; text-align: center; border-radius: 0 0 8px 8px; }
+          .button { display: inline-block; background: #ef4444; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>Resetovanje lozinke</h1>
+          </div>
+          <div class="content">
+            <p>Zdravo ${firstName},</p>
+            <p>Zatražili ste resetovanje lozinke. Kliknite na dugme ispod da biste postavili novu lozinku.</p>
+            <a href="${resetUrl}" class="button" style="color: white;">Resetuj lozinku</a>
+            <p>Link prestaje da važi za 1 sat.</p>
+            <p>Ako niste zatražili resetovanje lozinke, možete ignorisati ovu poruku.</p>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+
+  return sendEmail(to, subject, html);
 }

@@ -195,6 +195,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Može se oceniti samo u roku od 7 dana od završetka usluge
+    const completedAt = new Date(booking.updatedAt);
+    const now = new Date();
+    const daysSinceCompletion = (now.getTime() - completedAt.getTime()) / (1000 * 60 * 60 * 24);
+
+    if (daysSinceCompletion > 7) {
+      return errorResponse(
+        "Usluga se može oceniti najkasnije 7 dana nakon završetka.",
+        400
+      );
+    }
+
     // Proveri da li već postoji ocena
     if (booking.review) {
       return errorResponse(

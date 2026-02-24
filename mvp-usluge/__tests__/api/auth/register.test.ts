@@ -86,7 +86,7 @@ describe('POST /api/auth/register', () => {
             }),
         });
 
-        const response = await POST(request);
+        const response = (await POST(request))!;
         const data = await response.json();
 
         expect(response.status).toBe(201);
@@ -115,7 +115,7 @@ describe('POST /api/auth/register', () => {
             }),
         });
 
-        const response = await POST(request);
+        const response = (await POST(request))!;
         const data = await response.json();
 
         expect(response.status).toBe(409);
@@ -137,7 +137,7 @@ describe('POST /api/auth/register', () => {
             }),
         });
 
-        const response = await POST(request);
+        const response = (await POST(request))!;
         const data = await response.json();
 
         expect(response.status).toBe(422);
@@ -166,7 +166,7 @@ describe('POST /api/auth/register', () => {
             }),
         });
 
-        const response = await POST(request);
+        const response = (await POST(request))!;
 
         expect(response.status).toBe(429);
     });

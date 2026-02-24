@@ -31,6 +31,7 @@ export async function GET(
             address: true,
             phone: true,
             bio: true,
+            verifiedAt: true,
           },
         },
         category: {

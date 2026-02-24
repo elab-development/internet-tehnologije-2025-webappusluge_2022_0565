@@ -5,7 +5,9 @@ import { getCurrentUser } from "@/lib/auth-helpers";
 import { createServiceSchema } from "@/lib/validations/service";
 import { UserRole } from "@prisma/client";
 import { calculateDistance } from '@/lib/geolocation';
+import { applyRateLimit, guestSearchRateLimit } from "@/lib/rate-limit";
 
+// ... [swagger docs skipped, leaving it all in]
 /**
  * @swagger
  * /api/services:
@@ -93,10 +95,22 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
 
+    // 🛡 F-2 GUEST RATE LIMIT
+    const user = await getCurrentUser();
+    if (!user) {
+      const rateLimitResult = await applyRateLimit(req, guestSearchRateLimit);
+      if (!rateLimitResult.success) {
+        return rateLimitResult.response;
+      }
+    }
+
     // Query parametri
     const categoryId = searchParams.get("categoryId");
     const providerId = searchParams.get("providerId");
     const search = searchParams.get("search");
+    const minPrice = searchParams.get("minPrice");
+    const maxPrice = searchParams.get("maxPrice");
+    const minRating = searchParams.get("minRating");
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "10");
     const skip = (page - 1) * limit;
@@ -125,6 +139,19 @@ export async function GET(req: NextRequest) {
         { name: { contains: search, mode: "insensitive" } },
         { description: { contains: search, mode: "insensitive" } },
       ];
+    }
+
+    if (minPrice || maxPrice) {
+      where.price = {};
+      if (minPrice) where.price.gte = parseFloat(minPrice);
+      if (maxPrice) where.price.lte = parseFloat(maxPrice);
+    }
+
+    if (minRating) {
+      where.provider = {
+        ...where.provider,
+        averageRating: { gte: parseFloat(minRating) }
+      };
     }
 
     // Fetch usluga sa paginacijom

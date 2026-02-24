@@ -4,20 +4,21 @@ import { successResponse, errorResponse } from '@/lib/api-utils';
 import { getCurrentUser } from '@/lib/auth-helpers';
 import { UserRole } from '@prisma/client';
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const user = await getCurrentUser();
     if (!user || user.role !== UserRole.ADMIN) {
         return errorResponse('Forbidden', 403);
     }
 
     const { isActive } = await req.json();
+    const resolvedParams = await params;
 
-    if (params.id === user.id) {
+    if (resolvedParams.id === user.id) {
         return errorResponse('Ne možete deaktivirati sopstveni nalog', 400);
     }
 
     const updatedUser = await prisma.user.update({
-        where: { id: params.id },
+        where: { id: resolvedParams.id },
         data: { isActive },
     });
 

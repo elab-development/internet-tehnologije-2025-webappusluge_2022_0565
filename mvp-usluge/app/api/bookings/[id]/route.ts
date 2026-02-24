@@ -178,14 +178,27 @@ export async function PATCH(
           (scheduledDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
 
         if (hoursUntilBooking < 24) {
-          return errorResponse(
-            "Rezervaciju možete otkazati najmanje 24h pre zakazanog termina",
-            400
-          );
-        }
+          // Strike sistem
+          const updatedUser = await prisma.user.update({
+            where: { id: user.id },
+            data: { strikes: { increment: 1 } },
+            select: { strikes: true }
+          });
 
-        // Evidentiraj otkazivanje (za statistiku)
-        // TODO: Implementirati sistem upozorenja (3 otkazivanja = suspenzija)
+          if (updatedUser.strikes >= 3) {
+            const banDate = new Date();
+            banDate.setDate(banDate.getDate() + 7);
+
+            await prisma.user.update({
+              where: { id: user.id },
+              data: {
+                bannedUntil: banDate,
+                strikes: 0 // Resetuj strike-ove nakom ban-a
+              }
+            });
+            console.log(`Korisnik ${user.id} suspendovan na 7 dana zbog 3 kasna otkazivanja.`);
+          }
+        }
       }
     }
 
@@ -211,12 +224,18 @@ export async function PATCH(
     }
 
     // Ažuriraj rezervaciju
+    const dataToUpdate: any = {
+      status: validatedData.status,
+      providerNotes: validatedData.providerNotes,
+    };
+
+    if (validatedData.workerId !== undefined) {
+      dataToUpdate.workerId = validatedData.workerId;
+    }
+
     const updatedBooking = await prisma.booking.update({
       where: { id },
-      data: {
-        status: validatedData.status,
-        providerNotes: validatedData.providerNotes,
-      },
+      data: dataToUpdate,
       include: {
         service: {
           select: {

@@ -48,6 +48,12 @@ export const updateBookingStatusSchema = z.object({
     .string()
     .max(500, "Napomena ne može biti duža od 500 karaktera")
     .optional(),
+
+  workerId: z
+    .string()
+    .uuid("Nevalidan radnik")
+    .nullable()
+    .optional(),
 });
 
 /**

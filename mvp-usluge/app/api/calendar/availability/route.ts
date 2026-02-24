@@ -50,6 +50,13 @@ export async function GET(req: NextRequest) {
             },
         });
 
+        const provider = await prisma.user.findUnique({
+            where: { id: providerId },
+            select: { slotDuration: true },
+        });
+
+        const step = provider?.slotDuration || 30;
+
         if (workingHours.length === 0) {
             return successResponse({
                 date: dateStr,

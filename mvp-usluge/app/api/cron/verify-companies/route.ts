@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { checkAndUpdateCompanyVerification } from '@/lib/verification';
 
-export async function POST(req: NextRequest) {
+export async function GET(req: NextRequest) {
     try {
         // 🔒 Zaštita endpoint-a
         const authHeader = req.headers.get('authorization');
@@ -23,3 +23,5 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
     }
 }
+
+export const POST = GET;

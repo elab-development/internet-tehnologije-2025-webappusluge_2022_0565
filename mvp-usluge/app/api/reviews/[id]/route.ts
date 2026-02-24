@@ -160,15 +160,15 @@ export async function PATCH(
       };
 
       const validatedData = updateReviewSchema.parse(sanitizedBody);
-      // Proveri da li je prošlo više od 7 dana
+      // Proveri da li je prošlo više od 24h
       const createdAt = new Date(existingReview.createdAt);
       const now = new Date();
-      const daysSinceCreation =
-        (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
+      const hoursSinceCreation =
+        (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
 
-      if (daysSinceCreation > 7) {
+      if (hoursSinceCreation > 24) {
         return errorResponse(
-          "Ocene se mogu menjati samo u roku od 7 dana",
+          "Ocene se mogu menjati samo u roku od 24h",
           400
         );
       }

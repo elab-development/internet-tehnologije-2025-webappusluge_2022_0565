@@ -138,6 +138,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Provera za banovane klijente
+    const dbUser = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { bannedUntil: true }
+    });
+
+    if (dbUser?.bannedUntil && new Date(dbUser.bannedUntil) > new Date()) {
+      return errorResponse(
+        `Nalog je privremeno suspendovan do ${format(new Date(dbUser.bannedUntil), 'dd.MM.yyyy HH:mm', { locale: sr })} zbog višestrukog kasnog otkazivanja.`,
+        403
+      );
+    }
+
     // Validacija
     const body = await req.json();
     const validatedData = createBookingSchema.parse(body);
@@ -226,7 +239,8 @@ export async function POST(req: NextRequest) {
     }
 
     // 🆕 Proveri da li pružalac radi tog dana
-    const dayOfWeek = new Date(validatedData.scheduledDate).getDay();
+    const dateObj = new Date(validatedData.scheduledDate);
+    const dayOfWeek = dateObj.getUTCDay();
 
     const workingHours = await prisma.workingHours.findMany({
       where: {
@@ -238,7 +252,7 @@ export async function POST(req: NextRequest) {
 
     if (workingHours.length === 0) {
       return errorResponse(
-        'Pružalac ne radi tog dana. Molimo izaberite drugi datum.',
+        'Pružalac ne radi izabranog dana. Molimo izaberite drugi datum.',
         400
       );
     }

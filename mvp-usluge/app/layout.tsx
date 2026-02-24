@@ -12,6 +12,8 @@ export const metadata: Metadata = {
   description: "Povežite se sa pružaocima usluga",
 };
 
+import Navbar from "@/components/layout/Navbar";
+
 export default async function RootLayout({
   children,
 }: {
@@ -22,7 +24,10 @@ export default async function RootLayout({
   return (
     <html lang="sr">
       <body className={inter.className}>
-        <SessionProvider session={session}>{children}</SessionProvider>
+        <SessionProvider session={session}>
+          <Navbar />
+          {children}
+        </SessionProvider>
       </body>
     </html>
   );

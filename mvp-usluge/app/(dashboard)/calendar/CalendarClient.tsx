@@ -23,6 +23,8 @@ export default function CalendarClient() {
     const [workingHours, setWorkingHours] = useState<DaySchedule[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [slotDuration, setSlotDuration] = useState(30);
+    const [isUpdatingSlotDuration, setIsUpdatingSlotDuration] = useState(false);
 
     // Form state
     const [selectedDay, setSelectedDay] = useState(1); // Ponedeljak
@@ -46,6 +48,9 @@ export default function CalendarClient() {
             }
 
             setWorkingHours(data.data.workingHours);
+            if (data.data.slotDuration) {
+                setSlotDuration(data.data.slotDuration);
+            }
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Unknown error');
         } finally {
@@ -116,6 +121,28 @@ export default function CalendarClient() {
             alert('Radno vreme obrisano!');
         } catch (err) {
             alert(err instanceof Error ? err.message : 'Greška pri brisanju');
+        }
+    };
+
+    const handleUpdateSlotDuration = async () => {
+        try {
+            setIsUpdatingSlotDuration(true);
+            const response = await fetch('/api/calendar/working-hours', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ slotDuration }),
+            });
+
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.error || 'Failed to update slot duration');
+            }
+
+            alert('Trajanje termina uspešno ažurirano!');
+        } catch (err) {
+            alert(err instanceof Error ? err.message : 'Greška pri ažuriranju');
+        } finally {
+            setIsUpdatingSlotDuration(false);
         }
     };
 
@@ -249,6 +276,37 @@ export default function CalendarClient() {
                                             )}
                                         </div>
                                     ))}
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* Prikaz trajanja termina */}
+                        <Card variant="bordered" padding="lg" className="mt-6">
+                            <CardHeader>
+                                <CardTitle>Postavke kalendara</CardTitle>
+                                <CardDescription>Osnovno trajanje jednog slota (termina) u kalendaru</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="flex items-center gap-4">
+                                    <select
+                                        value={slotDuration}
+                                        onChange={(e) => setSlotDuration(parseInt(e.target.value))}
+                                        className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 max-w-xs"
+                                    >
+                                        <option value={15}>15 minuta</option>
+                                        <option value={30}>30 minuta</option>
+                                        <option value={45}>45 minuta</option>
+                                        <option value={60}>1 sat</option>
+                                        <option value={90}>1.5 sati</option>
+                                        <option value={120}>2 sata</option>
+                                    </select>
+                                    <Button
+                                        variant="primary"
+                                        isLoading={isUpdatingSlotDuration}
+                                        onClick={handleUpdateSlotDuration}
+                                    >
+                                        Sačuvaj izmenu
+                                    </Button>
                                 </div>
                             </CardContent>
                         </Card>
