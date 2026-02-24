@@ -5,7 +5,7 @@ import { getCurrentUser } from "@/lib/auth-helpers";
 import { createBookingSchema } from "@/lib/validations/booking";
 import { UserRole, BookingStatus } from "@prisma/client";
 import { sendNewBookingNotification } from '@/lib/email';
-import { format } from 'date-fns';
+import { format, parse, addMinutes, isWithinInterval } from 'date-fns';
 import { sr } from 'date-fns/locale';
 
 /**
@@ -223,6 +223,45 @@ export async function POST(req: NextRequest) {
           404
         );
       }
+    }
+
+    // 🆕 Proveri da li pružalac radi tog dana
+    const dayOfWeek = new Date(validatedData.scheduledDate).getDay();
+
+    const workingHours = await prisma.workingHours.findMany({
+      where: {
+        userId: service.providerId,
+        dayOfWeek,
+        isActive: true,
+      },
+    });
+
+    if (workingHours.length === 0) {
+      return errorResponse(
+        'Pružalac ne radi tog dana. Molimo izaberite drugi datum.',
+        400
+      );
+    }
+
+    // 🆕 Proveri da li je vreme unutar radnog vremena
+    const requestedTime = parse(validatedData.scheduledTime, 'HH:mm', new Date());
+    const requestedEndTime = addMinutes(requestedTime, service.duration);
+
+    const isWithinWorkingHours = workingHours.some((wh: any) => {
+      const start = parse(wh.startTime, 'HH:mm', new Date());
+      const end = parse(wh.endTime, 'HH:mm', new Date());
+
+      return (
+        isWithinInterval(requestedTime, { start, end }) &&
+        requestedEndTime <= end
+      );
+    });
+
+    if (!isWithinWorkingHours) {
+      return errorResponse(
+        'Izabrano vreme nije u okviru radnog vremena pružaoca.',
+        400
+      );
     }
 
     // Kreiraj rezervaciju

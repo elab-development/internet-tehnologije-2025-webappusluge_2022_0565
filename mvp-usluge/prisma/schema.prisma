@@ -102,6 +102,9 @@ model User {
   // Radnici koje preduzeće zapošljava (samo COMPANY)
   employees Worker[] @relation("CompanyEmployees")
   
+  // Radno vreme pružaoca usluge
+  workingHours WorkingHours[] @relation("UserWorkingHours") // 🆕
+  
   @@index([email])
   @@index([role])
   @@index([latitude, longitude]) // 🆕 Index za geolokacijske upite
@@ -310,4 +313,34 @@ model Review {
   @@index([targetId])
   @@index([rating])
   @@map("reviews")
+}
+
+// ============================================
+// MODEL 7: WORKING HOURS (Radno vreme)
+// ============================================
+
+model WorkingHours {
+  id        String   @id @default(uuid())
+  
+  // Veza sa pružaocem (FREELANCER ili COMPANY)
+  userId    String
+  user      User     @relation("UserWorkingHours", fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Dan u nedelji (0 = Nedelja, 1 = Ponedeljak, ..., 6 = Subota)
+  dayOfWeek Int      // 0-6
+  
+  // Radno vreme
+  startTime String   // Format: "09:00"
+  endTime   String   // Format: "17:00"
+  
+  // Status
+  isActive  Boolean  @default(true)
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([userId])
+  @@index([dayOfWeek])
+  @@map("working_hours")
 }

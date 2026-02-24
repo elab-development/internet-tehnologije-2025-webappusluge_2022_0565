@@ -150,6 +150,67 @@ async function main() {
   console.log('✅ Created 7 users');
 
   // ============================================
+  // 1.5. KREIRANJE RADNOG VREMENA
+  // ============================================
+  console.log('⏰ Creating working hours...');
+
+  // Radno vreme za freelancer1 (Petar - frizer)
+  await prisma.workingHours.createMany({
+    data: [
+      // Ponedeljak - Petak: 09:00 - 17:00
+      { userId: freelancer1.id, dayOfWeek: 1, startTime: '09:00', endTime: '17:00', isActive: true },
+      { userId: freelancer1.id, dayOfWeek: 2, startTime: '09:00', endTime: '17:00', isActive: true },
+      { userId: freelancer1.id, dayOfWeek: 3, startTime: '09:00', endTime: '17:00', isActive: true },
+      { userId: freelancer1.id, dayOfWeek: 4, startTime: '09:00', endTime: '17:00', isActive: true },
+      { userId: freelancer1.id, dayOfWeek: 5, startTime: '09:00', endTime: '17:00', isActive: true },
+      // Subota: 10:00 - 14:00
+      { userId: freelancer1.id, dayOfWeek: 6, startTime: '10:00', endTime: '14:00', isActive: true },
+    ],
+  });
+
+  // Radno vreme za freelancer2 (Jovan - vodoinstalater) - 24/7 hitne intervencije
+  await prisma.workingHours.createMany({
+    data: [
+      { userId: freelancer2.id, dayOfWeek: 0, startTime: '00:00', endTime: '23:59', isActive: true },
+      { userId: freelancer2.id, dayOfWeek: 1, startTime: '00:00', endTime: '23:59', isActive: true },
+      { userId: freelancer2.id, dayOfWeek: 2, startTime: '00:00', endTime: '23:59', isActive: true },
+      { userId: freelancer2.id, dayOfWeek: 3, startTime: '00:00', endTime: '23:59', isActive: true },
+      { userId: freelancer2.id, dayOfWeek: 4, startTime: '00:00', endTime: '23:59', isActive: true },
+      { userId: freelancer2.id, dayOfWeek: 5, startTime: '00:00', endTime: '23:59', isActive: true },
+      { userId: freelancer2.id, dayOfWeek: 6, startTime: '00:00', endTime: '23:59', isActive: true },
+    ],
+  });
+
+  // Radno vreme za company1 (Beauty Salon)
+  await prisma.workingHours.createMany({
+    data: [
+      // Ponedeljak - Petak: 08:00 - 20:00
+      { userId: company1.id, dayOfWeek: 1, startTime: '08:00', endTime: '20:00', isActive: true },
+      { userId: company1.id, dayOfWeek: 2, startTime: '08:00', endTime: '20:00', isActive: true },
+      { userId: company1.id, dayOfWeek: 3, startTime: '08:00', endTime: '20:00', isActive: true },
+      { userId: company1.id, dayOfWeek: 4, startTime: '08:00', endTime: '20:00', isActive: true },
+      { userId: company1.id, dayOfWeek: 5, startTime: '08:00', endTime: '20:00', isActive: true },
+      // Subota: 09:00 - 18:00
+      { userId: company1.id, dayOfWeek: 6, startTime: '09:00', endTime: '18:00', isActive: true },
+    ],
+  });
+
+  // Radno vreme za company2 (Home Repair)
+  await prisma.workingHours.createMany({
+    data: [
+      // Ponedeljak - Subota: 07:00 - 19:00
+      { userId: company2.id, dayOfWeek: 1, startTime: '07:00', endTime: '19:00', isActive: true },
+      { userId: company2.id, dayOfWeek: 2, startTime: '07:00', endTime: '19:00', isActive: true },
+      { userId: company2.id, dayOfWeek: 3, startTime: '07:00', endTime: '19:00', isActive: true },
+      { userId: company2.id, dayOfWeek: 4, startTime: '07:00', endTime: '19:00', isActive: true },
+      { userId: company2.id, dayOfWeek: 5, startTime: '07:00', endTime: '19:00', isActive: true },
+      { userId: company2.id, dayOfWeek: 6, startTime: '07:00', endTime: '19:00', isActive: true },
+    ],
+  });
+
+  console.log('✅ Created working hours for 4 providers');
+
+  // ============================================
   // 2. KREIRANJE RADNIKA (za preduzeća)
   // ============================================
 
@@ -486,6 +547,7 @@ async function main() {
   console.log('  - 6 services');
   console.log('  - 3 bookings');
   console.log('  - 1 review');
+  console.log('  - 27 working hours slots');
   console.log('');
   console.log('🔑 Test credentials:');
   console.log('  Admin: admin@mvp.com / admin123');
