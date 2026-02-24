@@ -90,9 +90,54 @@ export async function GET(req: NextRequest) {
 }
 
 /**
- * POST /api/reviews
- * Kreira novu ocenu
- * Dozvoljeno samo za CLIENT ulogu i samo za COMPLETED rezervacije
+ * @swagger
+ * /api/reviews:
+ *   post:
+ *     summary: Kreira novu ocenu
+ *     description: Zaštićena ruta - samo CLIENT može ocenjivati COMPLETED usluge
+ *     tags: [Reviews]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - bookingId
+ *               - rating
+ *             properties:
+ *               bookingId:
+ *                 type: string
+ *                 format: uuid
+ *               rating:
+ *                 type: integer
+ *                 minimum: 1
+ *                 maximum: 5
+ *                 example: 5
+ *               comment:
+ *                 type: string
+ *                 maxLength: 500
+ *                 example: Odličan servis!
+ *     responses:
+ *       201:
+ *         description: Ocena uspešno kreirana
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   $ref: '#/components/schemas/Review'
+ *       400:
+ *         description: Rezervacija nije završena ili već postoji ocena
+ *       401:
+ *         description: Neautorizovan pristup
+ *       403:
+ *         description: Samo klijenti mogu ocenjivati
  */
 export async function POST(req: NextRequest) {
   try {

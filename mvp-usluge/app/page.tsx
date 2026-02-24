@@ -90,7 +90,7 @@ export default function HomePage() {
                 1. Pronađite uslugu
               </h3>
               <p className="text-gray-600">
-                Pretražite širok spektar usluga po kategorijama, lokaciji i ocenama. 
+                Pretražite širok spektar usluga po kategorijama, lokaciji i ocenama.
                 Filtrirajte rezultate prema vašim potrebama.
               </p>
             </div>
@@ -106,7 +106,7 @@ export default function HomePage() {
                 2. Zakažite termin
               </h3>
               <p className="text-gray-600">
-                Izaberite slobodan termin u kalendaru pružaoca. 
+                Izaberite slobodan termin u kalendaru pružaoca.
                 Dobijte potvrdu u realnom vremenu i automatske podsetnik.
               </p>
             </div>
@@ -122,7 +122,7 @@ export default function HomePage() {
                 3. Ocenite uslugu
               </h3>
               <p className="text-gray-600">
-                Nakon završene usluge, podelite svoje iskustvo. 
+                Nakon završene usluge, podelite svoje iskustvo.
                 Pomozite drugima da donesu pravu odluku.
               </p>
             </div>
@@ -166,6 +166,9 @@ export default function HomePage() {
           <div className="mt-6 flex justify-center gap-6">
             <Link href="/services" className="hover:text-white transition">
               Usluge
+            </Link>
+            <Link href="/docs" className="hover:text-white transition">
+              API Docs
             </Link>
             <Link href="/auth/register" className="hover:text-white transition">
               Registracija

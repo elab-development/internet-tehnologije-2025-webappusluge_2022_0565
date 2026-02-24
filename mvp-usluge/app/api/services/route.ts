@@ -6,15 +6,71 @@ import { createServiceSchema } from "@/lib/validations/service";
 import { UserRole } from "@prisma/client";
 
 /**
- * GET /api/services
- * Javna ruta - vraća listu svih aktivnih usluga
- * 
- * Query parametri:
- * - categoryId?: string (filter po kategoriji)
- * - providerId?: string (filter po pružaocu)
- * - search?: string (pretraga po nazivu/opisu)
- * - page?: number (paginacija)
- * - limit?: number (broj rezultata po stranici)
+ * @swagger
+ * /api/services:
+ *   get:
+ *     summary: Vraća listu svih aktivnih usluga
+ *     description: Javna ruta - pretraga i filtriranje usluga sa paginacijom
+ *     tags: [Services]
+ *     parameters:
+ *       - in: query
+ *         name: categoryId
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Filter po kategoriji
+ *       - in: query
+ *         name: providerId
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Filter po pružaocu
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Pretraga po nazivu/opisu
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Broj stranice
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Broj rezultata po stranici
+ *     responses:
+ *       200:
+ *         description: Lista usluga
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     services:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/Service'
+ *                     pagination:
+ *                       type: object
+ *                       properties:
+ *                         page:
+ *                           type: integer
+ *                         limit:
+ *                           type: integer
+ *                         total:
+ *                           type: integer
+ *                         totalPages:
+ *                           type: integer
  */
 export async function GET(req: NextRequest) {
   try {
@@ -97,9 +153,77 @@ export async function GET(req: NextRequest) {
 }
 
 /**
- * POST /api/services
- * Zaštićena ruta - kreira novu uslugu
- * Dozvoljeno samo za FREELANCER i COMPANY
+ * @swagger
+ * /api/services:
+ *   post:
+ *     summary: Kreira novu uslugu
+ *     description: Zaštićena ruta - samo FREELANCER i COMPANY
+ *     tags: [Services]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - description
+ *               - price
+ *               - duration
+ *               - categoryId
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 minLength: 3
+ *                 example: Muško šišanje
+ *               description:
+ *                 type: string
+ *                 minLength: 10
+ *                 example: Profesionalno muško šišanje sa stilizovanjem
+ *               price:
+ *                 type: number
+ *                 minimum: 0
+ *                 example: 1500
+ *               pricingType:
+ *                 type: string
+ *                 enum: [FIXED, HOURLY]
+ *                 default: FIXED
+ *               duration:
+ *                 type: integer
+ *                 minimum: 15
+ *                 maximum: 480
+ *                 example: 45
+ *               locationType:
+ *                 type: string
+ *                 enum: [ONSITE, CLIENT_LOCATION, ONLINE]
+ *                 default: ONSITE
+ *               categoryId:
+ *                 type: string
+ *                 format: uuid
+ *               images:
+ *                 type: array
+ *                 maxItems: 3
+ *                 items:
+ *                   type: string
+ *                   format: uri
+ *     responses:
+ *       201:
+ *         description: Usluga uspešno kreirana
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   $ref: '#/components/schemas/Service'
+ *       401:
+ *         description: Neautorizovan pristup
+ *       403:
+ *         description: Nedovoljna prava pristupa
  */
 export async function POST(req: NextRequest) {
   try {
