@@ -34,7 +34,7 @@ describe('lib/validations/auth', () => {
         it('should reject short password', () => {
             const invalidData = {
                 email: 'test@example.com',
-                password: '12345', // Less than 6 characters
+                password: '12345',
                 firstName: 'John',
                 lastName: 'Doe',
             };
@@ -50,7 +50,7 @@ describe('lib/validations/auth', () => {
             const invalidData = {
                 email: 'test@example.com',
                 password: 'password123',
-                firstName: 'J', // Less than 2 characters
+                firstName: 'J',
                 lastName: 'Doe',
             };
 
@@ -77,7 +77,7 @@ describe('lib/validations/auth', () => {
                 password: 'password123',
                 firstName: 'John',
                 lastName: 'Doe',
-                phone: '123', // Too short
+                phone: '123',
             };
 
             const result = registerSchema.safeParse(invalidData);

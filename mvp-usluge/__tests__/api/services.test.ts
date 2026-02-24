@@ -53,6 +53,9 @@ describe('/api/services', () => {
         });
 
         it('should filter by category', async () => {
+            (prisma.service.findMany as jest.Mock).mockResolvedValue([]);
+            (prisma.service.count as jest.Mock).mockResolvedValue(0);
+
             const request = new NextRequest('http://localhost:3000/api/services?categoryId=cat-123');
             await GET(request);
 
@@ -75,7 +78,9 @@ describe('/api/services', () => {
             });
 
             // Mock category exists
-            (prisma.category.findUnique as jest.Mock).mockResolvedValue({ id: '550e8400-e29b-41d4-a716-446655440000' });
+            (prisma.category.findUnique as jest.Mock).mockResolvedValue({
+                id: '550e8400-e29b-41d4-a716-446655440000'
+            });
 
             // Mock service count
             (prisma.service.count as jest.Mock).mockResolvedValue(5);
@@ -85,6 +90,10 @@ describe('/api/services', () => {
                 id: 'service-123',
                 name: 'New Service',
                 providerId: 'user-123',
+                description: 'Test description',
+                price: 1500,
+                duration: 60,
+                categoryId: '550e8400-e29b-41d4-a716-446655440000',
             };
             (prisma.service.create as jest.Mock).mockResolvedValue(mockService);
 
@@ -112,7 +121,10 @@ describe('/api/services', () => {
 
             const request = new NextRequest('http://localhost:3000/api/services', {
                 method: 'POST',
-                body: JSON.stringify({}),
+                body: JSON.stringify({
+                    name: 'Service',
+                    description: 'Description',
+                }),
             });
 
             const response = await POST(request);
@@ -127,7 +139,10 @@ describe('/api/services', () => {
 
             const request = new NextRequest('http://localhost:3000/api/services', {
                 method: 'POST',
-                body: JSON.stringify({}),
+                body: JSON.stringify({
+                    name: 'Service',
+                    description: 'Description',
+                }),
             });
 
             const response = await POST(request);

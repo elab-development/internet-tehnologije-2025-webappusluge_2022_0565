@@ -16,7 +16,6 @@ describe('Input Component', () => {
         const handleChange = jest.fn();
         render(<Input onChange={handleChange} />);
 
-        //textbox can be used here as default role
         const input = screen.getByRole('textbox');
         fireEvent.change(input, { target: { value: 'test' } });
 
@@ -72,8 +71,8 @@ describe('Input Component', () => {
         const { rerender } = render(<Input type="email" />);
         expect(screen.getByRole('textbox')).toHaveAttribute('type', 'email');
 
-        // For password, getByRole('textbox') won't work normally, use label or display value
         rerender(<Input type="password" label="Password" />);
-        expect(screen.getByLabelText(/password/i)).toHaveAttribute('type', 'password');
+        const passwordInput = screen.getByLabelText(/password/i);
+        expect(passwordInput).toHaveAttribute('type', 'password');
     });
 });

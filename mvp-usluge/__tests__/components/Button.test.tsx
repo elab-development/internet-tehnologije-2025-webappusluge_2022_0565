@@ -48,7 +48,6 @@ describe('Button Component', () => {
     it('should show loading state', () => {
         render(<Button isLoading>Loading</Button>);
         expect(screen.getByText('Loading')).toBeInTheDocument();
-        // Check for spinner SVG
         const button = screen.getByText('Loading').closest('button');
         expect(button?.querySelector('svg')).toBeInTheDocument();
     });

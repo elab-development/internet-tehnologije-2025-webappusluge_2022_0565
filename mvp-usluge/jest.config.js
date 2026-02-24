@@ -10,12 +10,12 @@ const customJestConfig = {
     moduleNameMapper: {
         '^@/(.*)$': '<rootDir>/$1',
     },
-    transform: {
-        '^.+\\.(js|jsx|ts|tsx)$': ['babel-jest', { configFile: './babel.config.js' }],
-    },
+
     transformIgnorePatterns: [
-        'node_modules/(?!(isomorphic-dompurify|@exodus|validator|node-fetch|undici|jsdom|html-encoding-sniffer|whatwg-url|whatwg-mimetype)/)',
+        'node_modules/(?!(@exodus/bytes|html-encoding-sniffer|whatwg-url|jsdom|isomorphic-dompurify|tr46|webidl-conversions)/)',
     ],
+
+    coveragePathIgnorePatterns: ['/node_modules/'],
 };
 
 module.exports = createJestConfig(customJestConfig);
