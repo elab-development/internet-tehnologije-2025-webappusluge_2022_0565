@@ -405,7 +405,57 @@ async function main() {
     },
   });
 
-  console.log('✅ Created 3 bookings');
+  console.log('✅ Created 3 initial bookings');
+
+  // Mock podaci za analitiku (u poslednjih 6 meseci za freelancer1 i company1)
+  console.log('📅 Creating recent bookings for analytics...');
+  for (let i = 0; i < 6; i++) {
+    const date = new Date();
+    date.setMonth(date.getMonth() - i);
+
+    const b1 = await prisma.booking.create({
+      data: {
+        scheduledDate: date,
+        scheduledTime: '10:00',
+        status: BookingStatus.COMPLETED,
+        clientId: client1.id,
+        providerId: freelancer1.id,
+        serviceId: service1.id,
+      },
+    });
+
+    await prisma.review.create({
+      data: {
+        rating: i % 2 === 0 ? 5 : 4,
+        comment: 'Odlično!',
+        authorId: client1.id,
+        targetId: freelancer1.id,
+        bookingId: b1.id,
+      },
+    });
+
+    const b2 = await prisma.booking.create({
+      data: {
+        scheduledDate: date,
+        scheduledTime: '14:00',
+        status: BookingStatus.COMPLETED,
+        clientId: client2.id,
+        providerId: company1.id,
+        serviceId: service5.id,
+      },
+    });
+
+    await prisma.review.create({
+      data: {
+        rating: 5,
+        comment: 'Vrlo dobro!',
+        authorId: client2.id,
+        targetId: company1.id,
+        bookingId: b2.id,
+      },
+    });
+  }
+  console.log('✅ Created recent mock bookings & reviews for analytics');
 
   // ============================================
   // 6. KREIRANJE OCENA
