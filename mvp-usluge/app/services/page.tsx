@@ -38,6 +38,7 @@ interface Service {
     city: string | null;
     latitude: number | null;
     longitude: number | null;
+    verifiedAt: string | Date | null;
   };
   category: {
     id: string;
@@ -470,9 +471,17 @@ export default function ServicesPage() {
                       </span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
-                        {getProviderName(service)}
-                      </p>
+                      <div className="flex items-center gap-1">
+                        <p className="text-sm font-medium text-gray-900 truncate">
+                          {getProviderName(service)}
+                        </p>
+                        {service.provider.verifiedAt && (
+                          <svg className="w-4 h-4 text-blue-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <title>Verifikovano preduzeće</title>
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                      </div>
                       {service.provider.city && (
                         <p className="text-xs text-gray-500">
                           {service.provider.city}
@@ -517,17 +526,19 @@ export default function ServicesPage() {
                 </CardContent>
 
                 {/* 🆕 Dodaj prikaz udaljenosti ako postoji */}
-                {service.distance !== undefined && service.distance !== null && (
-                  <div className="px-4 py-2 bg-blue-50 border-t">
-                    <p className="text-sm text-blue-700">
-                      📍 {service.distance < 1
-                        ? `${Math.round(service.distance * 1000)}m`
-                        : `${service.distance}km`} od vas
-                    </p>
-                  </div>
-                )}
+                {
+                  service.distance !== undefined && service.distance !== null && (
+                    <div className="px-4 py-2 bg-blue-50 border-t">
+                      <p className="text-sm text-blue-700">
+                        📍 {service.distance < 1
+                          ? `${Math.round(service.distance * 1000)}m`
+                          : `${service.distance}km`} od vas
+                      </p>
+                    </div>
+                  )
+                }
 
-                <CardFooter className="p-4 bg-gray-50">
+                < CardFooter className="p-4 bg-gray-50" >
                   <Link href={`/services/${service.id}`} className="w-full">
                     <Button variant="primary" fullWidth>
                       Pogledaj detalje
@@ -554,8 +565,9 @@ export default function ServicesPage() {
               height="600px"
             />
           </div>
-        )}
-      </div>
-    </div>
+        )
+        }
+      </div >
+    </div >
   );
 }

@@ -30,6 +30,11 @@ export default async function DashboardPage() {
   // FETCH PODATAKA (Server-side)
   // ============================================
 
+  const dbUser = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: { verifiedAt: true }
+  });
+
   // Statistika za pružaoce (FREELANCER i COMPANY)
   let providerStats = null;
   if (user.role === "FREELANCER" || user.role === "COMPANY") {
@@ -128,7 +133,15 @@ export default async function DashboardPage() {
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+                {dbUser?.verifiedAt && (
+                  <svg className="w-6 h-6 text-blue-500 mt-1" fill="currentColor" viewBox="0 0 20 20">
+                    <title>Verifikovano preduzeće</title>
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                )}
+              </div>
               <p className="text-gray-600 mt-1">
                 Dobrodošli, {user.name}!{" "}
                 <span className="text-sm text-gray-500">({user.role})</span>
