@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/lib/auth-helpers";
 import { createReviewSchema } from "@/lib/validations/reviews";
 import { updateUserAverageRating } from "@/lib/utils";
 import { UserRole, BookingStatus } from "@prisma/client";
+import { sendNewReviewNotification } from '@/lib/email';
 
 /**
  * GET /api/reviews
@@ -217,6 +218,7 @@ export async function POST(req: NextRequest) {
             firstName: true,
             lastName: true,
             companyName: true,
+            email: true,
           },
         },
         booking: {
@@ -235,8 +237,25 @@ export async function POST(req: NextRequest) {
     // Ažuriraj prosečnu ocenu pružaoca
     await updateUserAverageRating(booking.service.providerId);
 
-    // TODO: Poslati notifikaciju pružaocu
+    // 🆕 Pošalji notifikaciju pružaocu
+    try {
+      const providerName = review.target.companyName ||
+        `${review.target.firstName} ${review.target.lastName}`;
 
+      await sendNewReviewNotification(
+        review.target.email as string, // Cast because select doesn't include email but we need it
+        providerName,
+        {
+          clientName: `${review.author.firstName} ${review.author.lastName}`,
+          serviceName: review.booking.service.name,
+          rating: review.rating,
+          comment: review.comment || undefined,
+          reviewId: review.id,
+        }
+      );
+    } catch (error) {
+      console.error('Failed to send review notification:', error);
+    }
     return successResponse(
       review,
       "Hvala vam na oceni!",

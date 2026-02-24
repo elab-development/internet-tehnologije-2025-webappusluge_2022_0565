@@ -4,6 +4,9 @@ import { successResponse, errorResponse, handleApiError } from "@/lib/api-utils"
 import { getCurrentUser } from "@/lib/auth-helpers";
 import { createBookingSchema } from "@/lib/validations/booking";
 import { UserRole, BookingStatus } from "@prisma/client";
+import { sendNewBookingNotification } from '@/lib/email';
+import { format } from 'date-fns';
+import { sr } from 'date-fns/locale';
 
 /**
  * @swagger
@@ -262,7 +265,25 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // TODO: Poslati email notifikaciju pružaocu
+    // 🆕 Pošalji notifikaciju pružaocu
+    try {
+      const providerName = booking.provider.companyName || `${booking.provider.firstName} ${booking.provider.lastName}`;
+
+      await sendNewBookingNotification(
+        booking.provider.email,
+        providerName,
+        {
+          clientName: user.name || 'Klijent',
+          serviceName: booking.service.name,
+          scheduledDate: format(new Date(booking.scheduledDate), 'dd.MM.yyyy', { locale: sr }),
+          scheduledTime: booking.scheduledTime,
+          clientNotes: booking.clientNotes || undefined,
+          bookingId: booking.id,
+        }
+      );
+    } catch (error) {
+      console.error('Failed to send booking notification:', error);
+    }
 
     return successResponse(
       booking,

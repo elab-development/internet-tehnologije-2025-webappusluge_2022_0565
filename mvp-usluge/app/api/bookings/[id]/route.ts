@@ -4,6 +4,9 @@ import { successResponse, errorResponse, handleApiError } from "@/lib/api-utils"
 import { getCurrentUser } from "@/lib/auth-helpers";
 import { updateBookingStatusSchema } from "@/lib/validations/booking";
 import { UserRole, BookingStatus } from "@prisma/client";
+import { sendBookingConfirmation, sendBookingCancellation } from '@/lib/email';
+import { format } from 'date-fns';
+import { sr } from 'date-fns/locale';
 
 /**
  * GET /api/bookings/[id]
@@ -221,13 +224,55 @@ export async function PATCH(
             lastName: true,
             companyName: true,
             email: true,
+            phone: true,
+            address: true,
           },
         },
       },
     });
 
-    // TODO: Poslati email notifikaciju
+    // 🆕 Pošalji email notifikacije
+    try {
+      if (validatedData.status === BookingStatus.CONFIRMED) {
+        // Potvrda klijentu
+        const providerName = updatedBooking.provider.companyName ||
+          `${updatedBooking.provider.firstName} ${updatedBooking.provider.lastName}`;
 
+        await sendBookingConfirmation(
+          updatedBooking.client.email,
+          updatedBooking.client.firstName,
+          {
+            providerName,
+            serviceName: updatedBooking.service.name,
+            scheduledDate: format(new Date(updatedBooking.scheduledDate), 'dd.MM.yyyy', { locale: sr }),
+            scheduledTime: updatedBooking.scheduledTime,
+            providerPhone: (updatedBooking.provider as any).phone || undefined,
+            providerAddress: (updatedBooking.provider as any).address || undefined,
+          }
+        );
+      } else if (validatedData.status === BookingStatus.CANCELLED) {
+        // Notifikacija o otkazivanju
+        const cancelledBy = isClient ? 'client' : 'provider';
+        const recipientEmail = isClient ? updatedBooking.provider.email : updatedBooking.client.email;
+        const recipientName = isClient
+          ? (updatedBooking.provider.companyName || `${updatedBooking.provider.firstName} ${updatedBooking.provider.lastName}`)
+          : updatedBooking.client.firstName;
+
+        await sendBookingCancellation(
+          recipientEmail,
+          recipientName,
+          {
+            serviceName: updatedBooking.service.name,
+            scheduledDate: format(new Date(updatedBooking.scheduledDate), 'dd.MM.yyyy', { locale: sr }),
+            scheduledTime: updatedBooking.scheduledTime,
+            cancelledBy,
+            reason: validatedData.providerNotes || undefined,
+          }
+        );
+      }
+    } catch (error) {
+      console.error('Failed to send email notification:', error);
+    }
     const messages: Record<BookingStatus, string> = {
       CONFIRMED: "Rezervacija je potvrđena",
       REJECTED: "Rezervacija je odbijena",
