@@ -23,6 +23,7 @@ export async function GET(req: NextRequest) {
     const status = searchParams.get("status");
 
     // Where uslovi zavisno od uloge
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const where: any =
       user.role === UserRole.CLIENT
         ? { clientId: user.id }

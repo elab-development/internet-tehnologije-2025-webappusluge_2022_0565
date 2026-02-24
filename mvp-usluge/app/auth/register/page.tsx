@@ -30,7 +30,7 @@ export default function RegisterPage() {
     firstName: "",
     lastName: "",
     phone: "",
-    role: UserRole.CLIENT,
+    role: UserRole.CLIENT as UserRole,
     companyName: "",
     pib: "",
   });

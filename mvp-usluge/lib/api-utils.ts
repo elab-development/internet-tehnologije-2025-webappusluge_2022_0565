@@ -5,7 +5,7 @@ import { Prisma } from "@prisma/client";
 /**
  * Standardizovani API response format
  */
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   message?: string;
@@ -71,8 +71,11 @@ export function handleApiError(error: unknown): NextResponse<ApiResponse> {
 
   // Zod validaciona greška
   if (error instanceof ZodError) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const zodError = error as any;
     const errors: Record<string, string[]> = {};
-    error.errors.forEach((err) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    zodError.errors.forEach((err: any) => {
       const path = err.path.join(".");
       if (!errors[path]) {
         errors[path] = [];
