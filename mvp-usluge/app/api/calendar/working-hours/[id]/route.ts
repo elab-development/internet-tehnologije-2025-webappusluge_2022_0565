@@ -10,7 +10,7 @@ import { validateUUID } from '@/lib/sanitize';
  */
 export async function DELETE(
     req: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const user = await getCurrentUser();
@@ -19,12 +19,12 @@ export async function DELETE(
             return errorResponse('Neautorizovan pristup', 401);
         }
 
-        if (!validateUUID(params.id)) {
+        if (!validateUUID((await params).id)) {
             return errorResponse('Nevalidan ID format', 400);
         }
 
         const workingHours = await prisma.workingHours.findUnique({
-            where: { id: params.id },
+            where: { id: (await params).id },
         });
 
         if (!workingHours) {
@@ -37,7 +37,7 @@ export async function DELETE(
         }
 
         await prisma.workingHours.delete({
-            where: { id: params.id },
+            where: { id: (await params).id },
         });
 
         return successResponse(null, 'Radno vreme obrisano');

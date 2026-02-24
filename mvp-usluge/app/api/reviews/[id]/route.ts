@@ -13,16 +13,16 @@ import { validateUUID, sanitizeText } from '@/lib/sanitize';
  */
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // 🛡 VALIDACIJA UUID
-    if (!validateUUID(params.id)) {
+    if (!validateUUID((await params).id)) {
       return errorResponse("Nevalidan ID format", 400);
     }
 
     const review = await prisma.review.findUnique({
-      where: { id: params.id },
+      where: { id: (await params).id },
       include: {
         author: {
           select: {
@@ -73,7 +73,7 @@ export async function GET(
  */
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getCurrentUser();
@@ -83,13 +83,13 @@ export async function PATCH(
     }
 
     // 🛡 VALIDACIJA UUID
-    if (!validateUUID(params.id)) {
+    if (!validateUUID((await params).id)) {
       return errorResponse("Nevalidan ID format", 400);
     }
 
     // Pronađi ocenu
     const existingReview = await prisma.review.findUnique({
-      where: { id: params.id },
+      where: { id: (await params).id },
     });
 
     if (!existingReview) {
@@ -106,7 +106,7 @@ export async function PATCH(
     if (isResponse) {
       // ODGOVOR PRUŽAOCA
       if (!isTarget && user.role !== UserRole.ADMIN) {
-        console.warn(`IDOR attempt: User ${user.id} tried to respond to review ${params.id}`);
+        console.warn(`IDOR attempt: User ${user.id} tried to respond to review ${(await params).id}`);
         return errorResponse(
           "Samo pružalac može odgovoriti na ocenu",
           403
@@ -122,7 +122,7 @@ export async function PATCH(
       const validatedData = respondToReviewSchema.parse(sanitizedBody);
 
       const updatedReview = await prisma.review.update({
-        where: { id: params.id },
+        where: { id: (await params).id },
         data: {
           response: validatedData.response,
         },
@@ -146,7 +146,7 @@ export async function PATCH(
     } else {
       // IZMENA OCENE (KLIJENT)
       if (!isAuthor && user.role !== UserRole.ADMIN) {
-        console.warn(`IDOR attempt: User ${user.id} tried to modify review ${params.id}`);
+        console.warn(`IDOR attempt: User ${user.id} tried to modify review ${(await params).id}`);
         return errorResponse(
           "Možete izmeniti samo svoje ocene",
           403
@@ -175,7 +175,7 @@ export async function PATCH(
 
 
       const updatedReview = await prisma.review.update({
-        where: { id: params.id },
+        where: { id: (await params).id },
         data: {
           rating: validatedData.rating,
           comment: validatedData.comment,
@@ -210,7 +210,7 @@ export async function PATCH(
  */
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getCurrentUser();
@@ -220,12 +220,12 @@ export async function DELETE(
     }
 
     // 🛡 VALIDACIJA UUID
-    if (!validateUUID(params.id)) {
+    if (!validateUUID((await params).id)) {
       return errorResponse("Nevalidan ID format", 400);
     }
 
     const review = await prisma.review.findUnique({
-      where: { id: params.id },
+      where: { id: (await params).id },
       include: {
         target: {
           select: {
@@ -241,7 +241,7 @@ export async function DELETE(
 
     // Samo autor ili admin mogu obrisati
     if (review.authorId !== user.id && user.role !== UserRole.ADMIN) {
-      console.warn(`IDOR attempt: User ${user.id} tried to delete review ${params.id}`);
+      console.warn(`IDOR attempt: User ${user.id} tried to delete review ${(await params).id}`);
       return errorResponse("Nemate dozvolu da obrišete ovu ocenu", 403);
     }
 
@@ -261,7 +261,7 @@ export async function DELETE(
     }
 
     await prisma.review.delete({
-      where: { id: params.id },
+      where: { id: (await params).id },
     });
 
     // Ažuriraj prosečnu ocenu

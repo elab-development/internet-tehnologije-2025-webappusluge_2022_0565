@@ -422,6 +422,15 @@ async function main() {
     },
   });
 
+  await prisma.service.update({
+    where: { id: service5.id },
+    data: {
+      workers: {
+        connect: [{ id: worker2.id }],
+      },
+    },
+  });
+
   console.log('✅ Created 6 services');
 
   // ============================================

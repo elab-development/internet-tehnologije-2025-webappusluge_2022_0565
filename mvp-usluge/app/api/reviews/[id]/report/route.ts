@@ -9,7 +9,7 @@ import { getCurrentUser } from "@/lib/auth-helpers";
  */
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getCurrentUser();
@@ -19,7 +19,7 @@ export async function POST(
     }
 
     const review = await prisma.review.findUnique({
-      where: { id: params.id },
+      where: { id: (await params).id },
     });
 
     if (!review) {

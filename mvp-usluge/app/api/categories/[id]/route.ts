@@ -11,11 +11,11 @@ import { UserRole } from "@prisma/client";
  */
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const category = await prisma.category.findUnique({
-      where: { id: params.id },
+      where: { id: (await params).id },
       include: {
         parent: {
           select: {
@@ -83,7 +83,7 @@ export async function GET(
  */
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getCurrentUser();
@@ -98,7 +98,7 @@ export async function PUT(
 
     // Pronađi kategoriju
     const existingCategory = await prisma.category.findUnique({
-      where: { id: params.id },
+      where: { id: (await params).id },
     });
 
     if (!existingCategory) {
@@ -122,7 +122,7 @@ export async function PUT(
 
     // Ako se menja parentId, proveri validnost
     if (validatedData.parentId !== undefined) {
-      if (validatedData.parentId === params.id) {
+      if (validatedData.parentId === (await params).id) {
         return errorResponse("Kategorija ne može biti sopstveni roditelj", 400);
       }
 
@@ -147,7 +147,7 @@ export async function PUT(
 
     // Ažuriraj kategoriju
     const updatedCategory = await prisma.category.update({
-      where: { id: params.id },
+      where: { id: (await params).id },
       data: validatedData,
       include: {
         parent: {
@@ -177,7 +177,7 @@ export async function PUT(
  */
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getCurrentUser();
@@ -192,7 +192,7 @@ export async function DELETE(
 
     // Pronađi kategoriju
     const category = await prisma.category.findUnique({
-      where: { id: params.id },
+      where: { id: (await params).id },
       include: {
         _count: {
           select: {
@@ -225,7 +225,7 @@ export async function DELETE(
 
     // Obriši kategoriju
     await prisma.category.delete({
-      where: { id: params.id },
+      where: { id: (await params).id },
     });
 
     return successResponse(null, "Kategorija je uspešno obrisana");

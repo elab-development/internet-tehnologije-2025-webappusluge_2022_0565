@@ -264,6 +264,57 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // 🆕 Automatska dodela radnika (ako je pružalac COMPANY)
+    let assignedWorkerId = validatedData.workerId;
+
+    if (!assignedWorkerId && service.provider.role === UserRole.COMPANY) {
+      // Pronađi dostupne radnike za ovu uslugu
+      const availableWorkers = await prisma.worker.findMany({
+        where: {
+          companyId: service.providerId,
+          isActive: true,
+          services: {
+            some: {
+              id: service.id,
+            },
+          },
+        },
+        include: {
+          bookings: {
+            where: {
+              scheduledDate: new Date(validatedData.scheduledDate),
+              status: {
+                in: [BookingStatus.PENDING, BookingStatus.CONFIRMED],
+              },
+            },
+          },
+        },
+      });
+
+      if (availableWorkers.length > 0) {
+        // Strategija: Minimalna zauzetost (radnik sa najmanje rezervacija)
+        const sortedWorkers = availableWorkers.sort(
+          (a, b) => a.bookings.length - b.bookings.length
+        );
+
+        // Proveri da li prvi radnik ima slobodan termin
+        const firstWorker = sortedWorkers[0];
+        const hasConflict = firstWorker.bookings.some((workerBooking) => {
+          const bookingStart = parse(workerBooking.scheduledTime, 'HH:mm', new Date());
+          const bookingEnd = addMinutes(bookingStart, service.duration);
+
+          return (
+            isWithinInterval(requestedTime, { start: bookingStart, end: bookingEnd }) ||
+            isWithinInterval(requestedEndTime, { start: bookingStart, end: bookingEnd })
+          );
+        });
+
+        if (!hasConflict) {
+          assignedWorkerId = firstWorker.id;
+        }
+      }
+    }
+
     // Kreiraj rezervaciju
     const booking = await prisma.booking.create({
       data: {
@@ -273,7 +324,7 @@ export async function POST(req: NextRequest) {
         scheduledDate: new Date(validatedData.scheduledDate),
         scheduledTime: validatedData.scheduledTime,
         clientNotes: validatedData.clientNotes,
-        workerId: validatedData.workerId,
+        workerId: assignedWorkerId,
         status: BookingStatus.PENDING,
       },
       include: {
