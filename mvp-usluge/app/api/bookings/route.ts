@@ -6,10 +6,40 @@ import { createBookingSchema } from "@/lib/validations/booking";
 import { UserRole, BookingStatus } from "@prisma/client";
 
 /**
- * GET /api/bookings
- * Vraća rezervacije trenutnog korisnika
- * - Klijent: rezervacije koje je napravio
- * - Pružalac: rezervacije za njegove usluge
+ * @swagger
+ * /api/bookings:
+ *   get:
+ *     summary: Vraća rezervacije trenutnog korisnika
+ *     description: Zaštićena ruta - klijent vidi svoje, pružalac vidi rezervacije za svoje usluge
+ *     tags: [Bookings]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [PENDING, CONFIRMED, COMPLETED, CANCELLED, REJECTED]
+ *         description: Filter po statusu
+ *     responses:
+ *       200:
+ *         description: Lista rezervacija
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     bookings:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/Booking'
+ *       401:
+ *         description: Neautorizovan pristup
  */
 export async function GET(req: NextRequest) {
   try {
