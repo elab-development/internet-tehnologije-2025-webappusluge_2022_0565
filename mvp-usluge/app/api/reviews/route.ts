@@ -6,6 +6,7 @@ import { createReviewSchema } from "@/lib/validations/reviews";
 import { updateUserAverageRating } from "@/lib/utils";
 import { UserRole, BookingStatus } from "@prisma/client";
 import { sendNewReviewNotification } from '@/lib/email';
+import { sanitizeText } from '@/lib/sanitize';
 
 /**
  * GET /api/reviews
@@ -155,7 +156,14 @@ export async function POST(req: NextRequest) {
 
     // Validacija
     const body = await req.json();
-    const validatedData = createReviewSchema.parse(body);
+
+    // 🛡 XSS ZAŠTITA - Sanitizuj komentar
+    const sanitizedBody = {
+      ...body,
+      comment: body.comment ? sanitizeText(body.comment) : undefined,
+    };
+
+    const validatedData = createReviewSchema.parse(sanitizedBody);
 
     // Pronađi rezervaciju
     const booking = await prisma.booking.findUnique({

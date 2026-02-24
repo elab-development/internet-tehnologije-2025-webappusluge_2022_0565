@@ -1,5 +1,6 @@
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
+import { validateCSRF } from "./lib/csrf";
 
 /**
  * Middleware za zaštitu ruta
@@ -8,7 +9,16 @@ import { NextResponse } from "next/server";
  */
 export default withAuth(
   function middleware(req) {
-    // Middleware se izvršava nakon uspešne autentifikacije
+    // 🛡 CSRF zaštita za POST/PUT/DELETE zahteve
+    if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
+      if (!validateCSRF(req)) {
+        return NextResponse.json(
+          { success: false, error: 'CSRF validation failed' },
+          { status: 403 }
+        );
+      }
+    }
+
     return NextResponse.next();
   },
   {
@@ -20,8 +30,11 @@ export default withAuth(
         // Javne rute (ne zahtevaju autentifikaciju)
         const publicApiRoutes = [
           "/api/auth",
-          "/api/services", // GET je javan
+          "/api/services",
           "/api/categories",
+          "/api/health",
+          "/api/docs",
+          "/api/geocode",
         ];
 
         // Proveri da li je ruta javna
