@@ -75,7 +75,7 @@ export function handleApiError(error: unknown): NextResponse<ApiResponse> {
     const zodError = error as any;
     const errors: Record<string, string[]> = {};
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    zodError.errors.forEach((err: any) => {
+    zodError.issues.forEach((err: any) => {
       const path = err.path.join(".");
       if (!errors[path]) {
         errors[path] = [];
