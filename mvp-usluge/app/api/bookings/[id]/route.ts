@@ -4,6 +4,7 @@ import { successResponse, errorResponse, handleApiError } from "@/lib/api-utils"
 import { getCurrentUser } from "@/lib/auth-helpers";
 import { updateBookingStatusSchema } from "@/lib/validations/booking";
 import { UserRole, BookingStatus } from "@prisma/client";
+import { validateUUID } from '@/lib/sanitize';
 import { sendBookingConfirmation, sendBookingCancellation } from '@/lib/email';
 import { format } from 'date-fns';
 import { sr } from 'date-fns/locale';
@@ -21,6 +22,11 @@ export async function GET(
 
     if (!user) {
       return errorResponse("Neautorizovan pristup", 401);
+    }
+
+    // 🛡 VALIDACIJA UUID
+    if (!validateUUID(params.id)) {
+      return errorResponse("Nevalidan ID format", 400);
     }
 
     const booking = await prisma.booking.findUnique({
@@ -82,12 +88,13 @@ export async function GET(
       return errorResponse("Rezervacija nije pronađena", 404);
     }
 
-    // Proveri pristup (samo klijent ili pružalac mogu videti)
+    // 🛡 IDOR ZAŠTITA - Proveri pristup
     if (
       booking.clientId !== user.id &&
       booking.providerId !== user.id &&
       user.role !== UserRole.ADMIN
     ) {
+      console.warn(`IDOR attempt: User ${user.id} tried to access booking ${params.id}`);
       return errorResponse("Nemate pristup ovoj rezervaciji", 403);
     }
 
@@ -114,6 +121,11 @@ export async function PATCH(
       return errorResponse("Neautorizovan pristup", 401);
     }
 
+    // 🛡 VALIDACIJA UUID
+    if (!validateUUID(params.id)) {
+      return errorResponse("Nevalidan ID format", 400);
+    }
+
     // Pronađi rezervaciju
     const existingBooking = await prisma.booking.findUnique({
       where: { id: params.id },
@@ -135,6 +147,7 @@ export async function PATCH(
     const isClient = existingBooking.clientId === user.id;
 
     if (!isProvider && !isClient && user.role !== UserRole.ADMIN) {
+      console.warn(`IDOR attempt: User ${user.id} tried to modify booking ${params.id}`);
       return errorResponse("Nemate pristup ovoj rezervaciji", 403);
     }
 
@@ -303,6 +316,11 @@ export async function DELETE(
 
     if (!user) {
       return errorResponse("Neautorizovan pristup", 401);
+    }
+
+    // 🛡 VALIDACIJA UUID
+    if (!validateUUID(params.id)) {
+      return errorResponse("Nevalidan ID format", 400);
     }
 
     const booking = await prisma.booking.findUnique({

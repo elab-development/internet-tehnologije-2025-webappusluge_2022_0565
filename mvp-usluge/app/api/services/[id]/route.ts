@@ -4,6 +4,7 @@ import { successResponse, errorResponse, handleApiError } from "@/lib/api-utils"
 import { getCurrentUser } from "@/lib/auth-helpers";
 import { updateServiceSchema } from "@/lib/validations/service";
 import { UserRole } from "@prisma/client";
+import { validateUUID } from '@/lib/sanitize';
 
 /**
  * GET /api/services/[id]
@@ -73,9 +74,14 @@ export async function PUT(
 ) {
   try {
     const user = await getCurrentUser();
-    
+
     if (!user) {
       return errorResponse("Neautorizovan pristup", 401);
+    }
+
+    // 🛡 VALIDACIJA UUID (SQL Injection zaštita)
+    if (!validateUUID(params.id)) {
+      return errorResponse("Nevalidan ID format", 400);
     }
 
     // Pronađi uslugu
@@ -87,8 +93,9 @@ export async function PUT(
       return errorResponse("Usluga nije pronađena", 404);
     }
 
-    // Proveri vlasništvo
+    // 🛡 IDOR ZAŠTITA - Proveri vlasništvo
     if (existingService.providerId !== user.id && user.role !== UserRole.ADMIN) {
+      console.warn(`IDOR attempt: User ${user.id} tried to modify service ${params.id} owned by ${existingService.providerId}`);
       return errorResponse(
         "Nemate dozvolu da izmenite ovu uslugu",
         403
@@ -153,9 +160,14 @@ export async function DELETE(
 ) {
   try {
     const user = await getCurrentUser();
-    
+
     if (!user) {
       return errorResponse("Neautorizovan pristup", 401);
+    }
+
+    // 🛡 VALIDACIJA UUID
+    if (!validateUUID(params.id)) {
+      return errorResponse("Nevalidan ID format", 400);
     }
 
     // Pronađi uslugu
@@ -176,8 +188,9 @@ export async function DELETE(
       return errorResponse("Usluga nije pronađena", 404);
     }
 
-    // Proveri vlasništvo
+    // 🛡 IDOR ZAŠTITA - Proveri vlasništvo
     if (existingService.providerId !== user.id && user.role !== UserRole.ADMIN) {
+      console.warn(`IDOR attempt: User ${user.id} tried to delete service ${params.id} owned by ${existingService.providerId}`);
       return errorResponse(
         "Nemate dozvolu da obrišete ovu uslugu",
         403

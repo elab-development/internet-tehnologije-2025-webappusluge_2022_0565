@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/lib/auth-helpers";
 import { updateReviewSchema, respondToReviewSchema } from "@/lib/validations/reviews";
 import { updateUserAverageRating } from "@/lib/utils";
 import { UserRole } from "@prisma/client";
+import { validateUUID, sanitizeText } from '@/lib/sanitize';
 
 /**
  * GET /api/reviews/[id]
@@ -15,6 +16,11 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    // 🛡 VALIDACIJA UUID
+    if (!validateUUID(params.id)) {
+      return errorResponse("Nevalidan ID format", 400);
+    }
+
     const review = await prisma.review.findUnique({
       where: { id: params.id },
       include: {
@@ -76,6 +82,11 @@ export async function PATCH(
       return errorResponse("Neautorizovan pristup", 401);
     }
 
+    // 🛡 VALIDACIJA UUID
+    if (!validateUUID(params.id)) {
+      return errorResponse("Nevalidan ID format", 400);
+    }
+
     // Pronađi ocenu
     const existingReview = await prisma.review.findUnique({
       where: { id: params.id },
@@ -95,13 +106,20 @@ export async function PATCH(
     if (isResponse) {
       // ODGOVOR PRUŽAOCA
       if (!isTarget && user.role !== UserRole.ADMIN) {
+        console.warn(`IDOR attempt: User ${user.id} tried to respond to review ${params.id}`);
         return errorResponse(
           "Samo pružalac može odgovoriti na ocenu",
           403
         );
       }
 
-      const validatedData = respondToReviewSchema.parse(body);
+      // 🛡 XSS ZAŠTITA - Sanitizuj odgovor
+      const sanitizedBody = {
+        ...body,
+        response: body.response ? sanitizeText(body.response) : undefined,
+      };
+
+      const validatedData = respondToReviewSchema.parse(sanitizedBody);
 
       const updatedReview = await prisma.review.update({
         where: { id: params.id },
@@ -128,12 +146,20 @@ export async function PATCH(
     } else {
       // IZMENA OCENE (KLIJENT)
       if (!isAuthor && user.role !== UserRole.ADMIN) {
+        console.warn(`IDOR attempt: User ${user.id} tried to modify review ${params.id}`);
         return errorResponse(
           "Možete izmeniti samo svoje ocene",
           403
         );
       }
 
+      // 🛡 XSS ZAŠTITA - Sanitizuj komentar
+      const sanitizedBody = {
+        ...body,
+        comment: body.comment ? sanitizeText(body.comment) : undefined,
+      };
+
+      const validatedData = updateReviewSchema.parse(sanitizedBody);
       // Proveri da li je prošlo više od 7 dana
       const createdAt = new Date(existingReview.createdAt);
       const now = new Date();
@@ -147,7 +173,6 @@ export async function PATCH(
         );
       }
 
-      const validatedData = updateReviewSchema.parse(body);
 
       const updatedReview = await prisma.review.update({
         where: { id: params.id },
@@ -194,6 +219,11 @@ export async function DELETE(
       return errorResponse("Neautorizovan pristup", 401);
     }
 
+    // 🛡 VALIDACIJA UUID
+    if (!validateUUID(params.id)) {
+      return errorResponse("Nevalidan ID format", 400);
+    }
+
     const review = await prisma.review.findUnique({
       where: { id: params.id },
       include: {
@@ -211,6 +241,7 @@ export async function DELETE(
 
     // Samo autor ili admin mogu obrisati
     if (review.authorId !== user.id && user.role !== UserRole.ADMIN) {
+      console.warn(`IDOR attempt: User ${user.id} tried to delete review ${params.id}`);
       return errorResponse("Nemate dozvolu da obrišete ovu ocenu", 403);
     }
 

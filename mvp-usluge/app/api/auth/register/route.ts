@@ -9,6 +9,8 @@ import {
 } from "@/lib/api-utils";
 import { UserRole } from "@prisma/client";
 import { sendWelcomeEmail } from '@/lib/email';
+import { applyRateLimit, authRateLimit } from '@/lib/rate-limit';
+import { sanitizeText, validateEmail, containsSQLInjection } from '@/lib/sanitize';
 
 /**
  * @swagger
@@ -90,11 +92,38 @@ import { sendWelcomeEmail } from '@/lib/email';
  */
 export async function POST(req: NextRequest) {
   try {
+    // 🛡 RATE LIMITING (5 pokušaja u 15 minuta)
+    const rateLimitResult = await applyRateLimit(req, authRateLimit);
+
+    if (!rateLimitResult.success) {
+      return rateLimitResult.response;
+    }
+
     // Parse request body
     const body = await req.json();
 
+    // 🛡 XSS ZAŠTITA - Sanitizuj input
+    const sanitizedBody = {
+      ...body,
+      firstName: body.firstName ? sanitizeText(body.firstName) : undefined,
+      lastName: body.lastName ? sanitizeText(body.lastName) : undefined,
+      companyName: body.companyName ? sanitizeText(body.companyName) : undefined,
+    };
+
+    // 🛡 SQL INJECTION ZAŠTITA - Dodatna validacija
+    if (body.email) {
+      if (!validateEmail(body.email)) {
+        return errorResponse('Nevalidna email adresa', 400);
+      }
+
+      if (containsSQLInjection(body.email)) {
+        console.warn(`SQL Injection attempt detected: ${body.email}`);
+        return errorResponse('Nevalidan input', 400);
+      }
+    }
+
     // Validacija sa Zod
-    const validatedData = registerSchema.parse(body);
+    const validatedData = registerSchema.parse(sanitizedBody);
 
     // Dodatna validacija za COMPANY ulogu
     if (validatedData.role === UserRole.COMPANY) {

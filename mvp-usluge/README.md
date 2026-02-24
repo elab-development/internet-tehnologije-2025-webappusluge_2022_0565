@@ -369,6 +369,67 @@ API koristi **JWT tokene** (NextAuth.js). Za zaštićene rute:
 - 422 - Validation Error
 - 500 - Internal Server Error
 - 503 - Service Unavailable
+
+## 🔒 Bezbednost
+
+Aplikacija je zaštićena od sledećih napada:
+
+### **Implementirane zaštite:**
+
+| Napad | Zaštita | Status |
+|-------|---------|--------|
+| **CSRF** | NextAuth CSRF token + Origin/Referer validacija | ✅ |
+| **XSS** | DOMPurify sanitizacija + CSP headers | ✅ |
+| **IDOR** | Provera vlasništva resursa + UUID validacija | ✅ |
+| **SQL Injection** | Prisma ORM prepared statements + input validacija | ✅ |
+| **Brute-Force** | Rate limiting (Upstash Redis) | ✅ |
+| **Clickjacking** | X-Frame-Options header | ✅ |
+| **MIME Sniffing** | X-Content-Type-Options header | ✅ |
+
+### **Detalji:**
+
+#### **1. CSRF (Cross-Site Request Forgery)**
+- NextAuth.js automatska zaštita
+- Origin/Referer header validacija
+- SameSite cookie atribut
+
+#### **2. XSS (Cross-Site Scripting)**
+- DOMPurify sanitizacija user input-a
+- Content Security Policy (CSP) headers
+- React automatski escape-uje JSX
+
+#### **3. IDOR (Insecure Direct Object Reference)**
+- Provera vlasništva u svim API rutama
+- UUID validacija
+- Logging neautorizovanih pokušaja
+
+#### **4. SQL Injection**
+- Prisma ORM prepared statements
+- Zod schema validacija
+- Detekcija SQL ključnih reči
+
+#### **5. Rate Limiting**
+- Auth endpoints: 5 pokušaja / 15 min
+- API endpoints: 100 zahteva / min
+- Create endpoints: 10 kreiranja / sat
+
+### **Security Headers:**
+```http
+Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
+X-Frame-Options: SAMEORIGIN
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 1; mode=block
+Content-Security-Policy: default-src 'self'; ...
+```
+
+### **Dodatne mere:**
+- ✅ Password hashing (bcrypt, 10 rounds)
+- ✅ JWT tokens (httpOnly cookies)
+- ✅ Input validation (Zod schemas)
+- ✅ Error handling (ne otkriva interne detalje)
+- ✅ HTTPS (obavezno u produkciji)
+
+**Detaljnije:** Pogledaj [SECURITY.md](./SECURITY.md)
 ## 📧 Email Notifikacije
 
 Aplikacija koristi **Resend** za slanje email notifikacija.
