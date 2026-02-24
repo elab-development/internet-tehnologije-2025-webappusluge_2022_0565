@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db/prisma";
 import { successResponse, errorResponse, handleApiError } from "@/lib/api-utils";
 import { getCurrentUser } from "@/lib/auth-helpers";
-import { createReviewSchema } from "@/lib/validations/review";
+import { createReviewSchema } from "@/lib/validations/reviews";
 import { updateUserAverageRating } from "@/lib/utils";
 import { UserRole, BookingStatus } from "@prisma/client";
 
@@ -19,6 +19,7 @@ export async function GET(req: NextRequest) {
     const targetId = searchParams.get("targetId");
     const serviceId = searchParams.get("serviceId");
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const where: any = {};
 
     if (targetId) {

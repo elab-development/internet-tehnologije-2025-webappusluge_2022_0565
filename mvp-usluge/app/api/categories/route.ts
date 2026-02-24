@@ -19,8 +19,9 @@ export async function GET(req: NextRequest) {
     const includeChildren = searchParams.get("includeChildren") !== "false";
 
     // Ako je parentId null ili "null", vraćamo root kategorije
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const where: any = {};
-    
+
     if (parentId === "null" || parentId === null) {
       where.parentId = null;
     } else if (parentId) {
@@ -33,12 +34,12 @@ export async function GET(req: NextRequest) {
         // Podkategorije (children)
         children: includeChildren
           ? {
-              include: {
-                _count: {
-                  select: { services: true },
-                },
+            include: {
+              _count: {
+                select: { services: true },
               },
-            }
+            },
+          }
           : false,
         // Broj usluga u kategoriji
         _count: {
@@ -70,13 +71,14 @@ export async function GET(req: NextRequest) {
       servicesCount: category._count.services,
       childrenCount: category.children ? category.children.length : 0,
       children: category.children
-        ? category.children.map((child) => ({
-            id: child.id,
-            name: child.name,
-            slug: child.slug,
-            iconUrl: child.iconUrl,
-            servicesCount: child._count.services,
-          }))
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ? (category.children as any[]).map((child) => ({
+          id: child.id,
+          name: child.name,
+          slug: child.slug,
+          iconUrl: child.iconUrl,
+          servicesCount: child._count?.services || 0,
+        }))
         : [],
     }));
 

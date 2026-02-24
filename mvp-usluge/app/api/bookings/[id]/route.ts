@@ -274,7 +274,7 @@ export async function DELETE(
     }
 
     // Može se obrisati samo ako je CANCELLED ili REJECTED
-    if (![BookingStatus.CANCELLED, BookingStatus.REJECTED].includes(booking.status)) {
+    if (!([BookingStatus.CANCELLED, BookingStatus.REJECTED] as BookingStatus[]).includes(booking.status)) {
       return errorResponse(
         "Možete obrisati samo otkazane ili odbijene rezervacije",
         400

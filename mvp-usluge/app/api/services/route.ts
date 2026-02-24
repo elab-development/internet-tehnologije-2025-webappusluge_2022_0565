@@ -19,7 +19,7 @@ import { UserRole } from "@prisma/client";
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    
+
     // Query parametri
     const categoryId = searchParams.get("categoryId");
     const providerId = searchParams.get("providerId");
@@ -29,6 +29,7 @@ export async function GET(req: NextRequest) {
     const skip = (page - 1) * limit;
 
     // Prisma where uslovi
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const where: any = {
       isActive: true,
     };
@@ -104,13 +105,13 @@ export async function POST(req: NextRequest) {
   try {
     // Provera autentifikacije
     const user = await getCurrentUser();
-    
+
     if (!user) {
       return errorResponse("Neautorizovan pristup", 401);
     }
 
     // Provera uloge
-    if (![UserRole.FREELANCER, UserRole.COMPANY].includes(user.role)) {
+    if (!([UserRole.FREELANCER, UserRole.COMPANY] as UserRole[]).includes(user.role)) {
       return errorResponse(
         "Samo pružaoci usluga mogu kreirati usluge",
         403
@@ -139,7 +140,7 @@ export async function POST(req: NextRequest) {
     });
 
     const maxServices = user.role === UserRole.FREELANCER ? 50 : 200;
-    
+
     if (serviceCount >= maxServices) {
       return errorResponse(
         `Dostignut maksimalan broj usluga (${maxServices})`,

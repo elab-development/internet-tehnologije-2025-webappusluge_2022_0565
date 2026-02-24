@@ -18,11 +18,11 @@ export async function getCurrentUser() {
  */
 export async function requireAuth() {
   const user = await getCurrentUser();
-  
+
   if (!user) {
     redirect("/auth/login");
   }
-  
+
   return user;
 }
 
@@ -32,17 +32,18 @@ export async function requireAuth() {
  */
 export async function requireRole(allowedRoles: UserRole[]) {
   const user = await requireAuth();
-  
+
   if (!allowedRoles.includes(user.role)) {
     redirect("/unauthorized");
   }
-  
+
   return user;
 }
 
 /**
  * Client-side helper za proveru da li je korisnik prijavljen
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function isAuthenticated(user: any): boolean {
   return !!user;
 }
@@ -50,6 +51,7 @@ export function isAuthenticated(user: any): boolean {
 /**
  * Client-side helper za proveru uloge
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function hasRole(user: any, roles: UserRole[]): boolean {
   return user && roles.includes(user.role);
 }
