@@ -12,6 +12,10 @@ import Card, {
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { formatPrice } from "@/lib/utils";
+import dynamic from 'next/dynamic';
+
+// Dinamički import Map komponente (client-side only)
+const Map = dynamic(() => import('@/components/ui/Map'), { ssr: false });
 
 /**
  * Service Interface
@@ -32,12 +36,15 @@ interface Service {
     role: string;
     averageRating: number | null;
     city: string | null;
+    latitude: number | null;
+    longitude: number | null;
   };
   category: {
     id: string;
     name: string;
     slug: string;
   };
+  distance?: number | null;
 }
 
 interface Category {
@@ -74,32 +81,72 @@ export default function ServicesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
+  const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
+  const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
+
   // ============================================
   // FETCH SERVICES (initial load + fallback)
   // (Ovaj useEffect će odraditi inicijalni fetch kada nema filtera po kategoriji)
   // ============================================
   useEffect(() => {
-    const fetchServices = async () => {
-      try {
-        setIsLoading(true);
-        const response = await fetch("/api/services");
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.error || "Greška pri učitavanju usluga");
+    // Zatraži dozvolu za geolokaciju
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lon: position.coords.longitude,
+          });
+        },
+        (error) => {
+          console.log('Geolocation error:', error);
         }
-
-        setServices(data.data.services);
-        setFilteredServices(data.data.services);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Nepoznata greška");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchServices();
+      );
+    }
   }, []);
+
+  const fetchServices = async () => {
+    try {
+      setIsLoading(true);
+
+      let url = "/api/services";
+      const params = new URLSearchParams();
+
+      if (selectedCategory) {
+        params.append('categoryId', selectedCategory);
+      }
+
+      // 🆕 Dodaj geolokacijske parametre
+      if (userLocation) {
+        params.append('latitude', userLocation.lat.toString());
+        params.append('longitude', userLocation.lon.toString());
+        params.append('radius', '50'); // 50km radijus
+      }
+
+      if (params.toString()) {
+        url += `?${params.toString()}`;
+      }
+
+      const response = await fetch(url);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Greška pri učitavanju usluga");
+      }
+
+      setServices(data.data.services);
+      setFilteredServices(data.data.services);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Nepoznata greška");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // FETCH SERVICES
+  useEffect(() => {
+    fetchServices();
+  }, [selectedCategory, userLocation]);
 
   // ============================================
   // SEARCH FILTER (useEffect hook)
@@ -176,34 +223,8 @@ export default function ServicesPage() {
   // ============================================
   // FETCH USLUGA SA FILTEROM PO KATEGORIJI
   // ============================================
-  useEffect(() => {
-    const fetchServices = async () => {
-      try {
-        setIsLoading(true);
+  // Duplicate fetchServices useEffect removed in favor of single fetching logic above
 
-        let url = "/api/services";
-        if (selectedCategory) {
-          url += `?categoryId=${selectedCategory}`;
-        }
-
-        const response = await fetch(url);
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.error || "Greška pri učitavanju usluga");
-        }
-
-        setServices(data.data.services);
-        setFilteredServices(data.data.services);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Nepoznata greška");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchServices();
-  }, [selectedCategory]);
 
   // ============================================
   // RENDER - LOADING STATE
@@ -303,6 +324,24 @@ export default function ServicesPage() {
             />
           </div>
 
+          {/* View Mode Toggle */}
+          <div className="mt-4 flex gap-2">
+            <Button
+              variant={viewMode === 'list' ? 'primary' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('list')}
+            >
+              📋 Lista
+            </Button>
+            <Button
+              variant={viewMode === 'map' ? 'primary' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('map')}
+            >
+              🗺 Mapa
+            </Button>
+          </div>
+
           {/* Category Filter */}
           <div className="mt-6">
             <h3 className="text-sm font-medium text-gray-700 mb-3">
@@ -399,93 +438,123 @@ export default function ServicesPage() {
           </Card>
         )}
 
-        {/* Services Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredServices.map((service) => (
-            <Card key={service.id} variant="elevated" padding="none" hoverable>
-              <CardHeader className="p-4 border-b">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <CardTitle className="text-lg">
-                      {service.name}
-                    </CardTitle>
-                    <CardDescription className="mt-1">
-                      {service.category.name}
-                    </CardDescription>
+        {/* Services Grid ili Mapa */}
+        {viewMode === 'list' ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredServices.map((service) => (
+              <Card key={service.id} variant="elevated" padding="none" hoverable>
+                <CardHeader className="p-4 border-b">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <CardTitle className="text-lg">
+                        {service.name}
+                      </CardTitle>
+                      <CardDescription className="mt-1">
+                        {service.category.name}
+                      </CardDescription>
+                    </div>
+                    {getLocationBadge(service.locationType)}
                   </div>
-                  {getLocationBadge(service.locationType)}
-                </div>
-              </CardHeader>
+                </CardHeader>
 
-              <CardContent className="p-4">
-                <p className="text-sm text-gray-600 line-clamp-3 mb-4">
-                  {service.description}
-                </p>
+                <CardContent className="p-4">
+                  <p className="text-sm text-gray-600 line-clamp-3 mb-4">
+                    {service.description}
+                  </p>
 
-                {/* Provider Info */}
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                    <span className="text-sm font-medium text-blue-600">
-                      {getProviderName(service).charAt(0)}
-                    </span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">
-                      {getProviderName(service)}
-                    </p>
-                    {service.provider.city && (
-                      <p className="text-xs text-gray-500">
-                        {service.provider.city}
-                      </p>
-                    )}
-                  </div>
-                  {service.provider.averageRating && (
-                    <div className="flex items-center gap-1">
-                      <svg
-                        className="w-4 h-4 text-yellow-400"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                      </svg>
-                      <span className="text-sm font-medium text-gray-700">
-                        {Number(service.provider.averageRating).toFixed(1)}
+                  {/* Provider Info */}
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                      <span className="text-sm font-medium text-blue-600">
+                        {getProviderName(service).charAt(0)}
                       </span>
                     </div>
-                  )}
-                </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {getProviderName(service)}
+                      </p>
+                      {service.provider.city && (
+                        <p className="text-xs text-gray-500">
+                          {service.provider.city}
+                        </p>
+                      )}
+                    </div>
+                    {service.provider.averageRating && (
+                      <div className="flex items-center gap-1">
+                        <svg
+                          className="w-4 h-4 text-yellow-400"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <span className="text-sm font-medium text-gray-700">
+                          {Number(service.provider.averageRating).toFixed(1)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
 
-                {/* Price & Duration */}
-                <div className="flex items-center justify-between pt-3 border-t">
-                  <div>
-                    <p className="text-2xl font-bold text-gray-900">
-                      {formatPrice(Number(service.price))}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {service.pricingType === "HOURLY"
-                        ? "po satu"
-                        : "fiksno"}
+                  {/* Price & Duration */}
+                  <div className="flex items-center justify-between pt-3 border-t">
+                    <div>
+                      <p className="text-2xl font-bold text-gray-900">
+                        {formatPrice(Number(service.price))}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {service.pricingType === "HOURLY"
+                          ? "po satu"
+                          : "fiksno"}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-medium text-gray-700">
+                        {service.duration} min
+                      </p>
+                      <p className="text-xs text-gray-500">trajanje</p>
+                    </div>
+                  </div>
+                </CardContent>
+
+                {/* 🆕 Dodaj prikaz udaljenosti ako postoji */}
+                {service.distance !== undefined && service.distance !== null && (
+                  <div className="px-4 py-2 bg-blue-50 border-t">
+                    <p className="text-sm text-blue-700">
+                      📍 {service.distance < 1
+                        ? `${Math.round(service.distance * 1000)}m`
+                        : `${service.distance}km`} od vas
                     </p>
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium text-gray-700">
-                      {service.duration} min
-                    </p>
-                    <p className="text-xs text-gray-500">trajanje</p>
-                  </div>
-                </div>
-              </CardContent>
+                )}
 
-              <CardFooter className="p-4 bg-gray-50">
-                <Link href={`/services/${service.id}`} className="w-full">
-                  <Button variant="primary" fullWidth>
-                    Pogledaj detalje
-                  </Button>
-                </Link>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
+                <CardFooter className="p-4 bg-gray-50">
+                  <Link href={`/services/${service.id}`} className="w-full">
+                    <Button variant="primary" fullWidth>
+                      Pogledaj detalje
+                    </Button>
+                  </Link>
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="w-full">
+            <Map
+              providers={filteredServices
+                .filter(s => s.provider.latitude && s.provider.longitude)
+                .map(s => ({
+                  id: s.provider.id,
+                  name: s.provider.companyName || `${s.provider.firstName} ${s.provider.lastName}`,
+                  latitude: s.provider.latitude!,
+                  longitude: s.provider.longitude!,
+                  city: s.provider.city || undefined,
+                  averageRating: s.provider.averageRating ? Number(s.provider.averageRating) : undefined,
+                  servicesCount: filteredServices.filter(fs => fs.provider.id === s.provider.id).length,
+                }))}
+              height="600px"
+            />
+          </div>
+        )}
       </div>
     </div>
   );

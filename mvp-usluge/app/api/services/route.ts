@@ -4,6 +4,7 @@ import { successResponse, errorResponse, handleApiError } from "@/lib/api-utils"
 import { getCurrentUser } from "@/lib/auth-helpers";
 import { createServiceSchema } from "@/lib/validations/service";
 import { UserRole } from "@prisma/client";
+import { calculateDistance } from '@/lib/geolocation';
 
 /**
  * @swagger
@@ -42,6 +43,22 @@ import { UserRole } from "@prisma/client";
  *           type: integer
  *           default: 10
  *         description: Broj rezultata po stranici
+ *       - in: query
+ *         name: latitude
+ *         schema:
+ *           type: number
+ *         description: Geografska širina korisnika
+ *       - in: query
+ *         name: longitude
+ *         schema:
+ *           type: number
+ *         description: Geografska dužina korisnika
+ *       - in: query
+ *         name: radius
+ *         schema:
+ *           type: integer
+ *           default: 50
+ *         description: Radijus pretrage u kilometrima
  *     responses:
  *       200:
  *         description: Lista usluga
@@ -84,6 +101,11 @@ export async function GET(req: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "10");
     const skip = (page - 1) * limit;
 
+    // 🆕 Geolokacijski parametri
+    const userLat = searchParams.get("latitude");
+    const userLon = searchParams.get("longitude");
+    const radius = parseInt(searchParams.get("radius") || "50"); // Default 50km
+
     // Prisma where uslovi
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const where: any = {
@@ -121,6 +143,8 @@ export async function GET(req: NextRequest) {
               role: true,
               averageRating: true,
               city: true,
+              latitude: true, // 🆕
+              longitude: true, // 🆕
             },
           },
           category: {
@@ -138,13 +162,53 @@ export async function GET(req: NextRequest) {
       prisma.service.count({ where }),
     ]);
 
+    // 🆕 Ako su prosleđene koordinate, filtriraj po udaljenosti
+    let filteredServices = (services as any[]).map(s => ({ ...s, distance: null as number | null }));
+
+    if (userLat && userLon) {
+      const lat = parseFloat(userLat);
+      const lon = parseFloat(userLon);
+
+      // Dodaj udaljenost svakoj usluzi
+      filteredServices = (services as any[])
+        .map((service) => {
+          if (service.provider.latitude && service.provider.longitude) {
+            const distance = calculateDistance(
+              lat,
+              lon,
+              service.provider.latitude,
+              service.provider.longitude
+            );
+
+            return {
+              ...service,
+              distance, // 🆕 Dodaj udaljenost u response
+            };
+          }
+          return {
+            ...service,
+            distance: null,
+          };
+        })
+        .filter((service) => {
+          // Filtriraj samo usluge unutar radijusa
+          return service.distance === null || service.distance <= radius;
+        })
+        .sort((a, b) => {
+          // Sortiraj po udaljenosti (najbliži prvo)
+          if (a.distance === null) return 1;
+          if (b.distance === null) return -1;
+          return a.distance - b.distance;
+        });
+    }
+
     return successResponse({
-      services,
+      services: filteredServices,
       pagination: {
         page,
         limit,
-        total,
-        totalPages: Math.ceil(total / limit),
+        total: userLat && userLon ? filteredServices.length : total,
+        totalPages: Math.ceil((userLat && userLon ? filteredServices.length : total) / limit),
       },
     });
   } catch (error) {

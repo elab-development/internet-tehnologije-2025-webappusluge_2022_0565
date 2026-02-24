@@ -6,10 +6,19 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Starting database seed...');
 
+  // Očisti bazu pre seed-a
+  console.log('🧹 Cleaning database...');
+  await prisma.review.deleteMany();
+  await prisma.booking.deleteMany();
+  await prisma.worker.deleteMany();
+  await prisma.service.deleteMany();
+  await prisma.category.deleteMany();
+  await prisma.user.deleteMany();
+
   // ============================================
   // 1. KREIRANJE KORISNIKA
   // ============================================
-  
+
   console.log('👤 Creating users...');
 
   // Admin korisnik
@@ -65,6 +74,8 @@ async function main() {
       bio: 'Profesionalni frizer sa 10 godina iskustva. Specijalizovan za moderne muške frizure.',
       address: 'Knez Mihailova 15',
       city: 'Beograd',
+      latitude: 44.8176,
+      longitude: 20.4633,
       averageRating: 4.8,
       totalReviews: 45,
     },
@@ -83,6 +94,8 @@ async function main() {
       bio: 'Licencirani vodoinstalater. Hitne intervencije 24/7.',
       address: 'Bulevar Kralja Aleksandra 45',
       city: 'Beograd',
+      latitude: 44.8048,
+      longitude: 20.4781,
       averageRating: 4.5,
       totalReviews: 32,
     },
@@ -103,6 +116,8 @@ async function main() {
       bio: 'Vodeći salon lepote u Beogradu. Nudimo sve vrste kozmetičkih tretmana.',
       address: 'Terazije 25',
       city: 'Beograd',
+      latitude: 44.8125,
+      longitude: 20.4612,
       averageRating: 4.9,
       totalReviews: 120,
       verifiedAt: new Date(),
@@ -124,6 +139,8 @@ async function main() {
       bio: 'Profesionalne usluge popravki i održavanja kuća i stanova.',
       address: 'Novi Beograd, Blok 23',
       city: 'Beograd',
+      latitude: 44.8167,
+      longitude: 20.3833,
       averageRating: 4.6,
       totalReviews: 85,
       verifiedAt: new Date(),

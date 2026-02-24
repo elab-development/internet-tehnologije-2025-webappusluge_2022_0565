@@ -61,6 +61,10 @@ model User {
   city          String?
   profileImage  String?  // URL slike
   
+  // 🆕 GEOLOKACIJA
+  latitude      Float?
+  longitude     Float?
+  
   // Verifikacija i status
   isVerified    Boolean  @default(false)
   isActive      Boolean  @default(true)
@@ -100,6 +104,7 @@ model User {
   
   @@index([email])
   @@index([role])
+  @@index([latitude, longitude]) // 🆕 Index za geolokacijske upite
   @@map("users")
 }
 
