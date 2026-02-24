@@ -1,6 +1,4 @@
-# ============================================
 # Stage 1: Dependencies
-# ============================================
 FROM node:22-alpine AS deps
 
 # Instaliraj libc6-compat za kompatibilnost sa Alpine Linux-om
@@ -10,10 +8,9 @@ WORKDIR /app
 
 # Kopiraj package.json i package-lock.json
 COPY package*.json ./
-COPY public ./public
 
-# Instaliraj dependencies
-RUN npm install --omit=dev --legacy-peer-deps
+# Instaliraj SVE dependencies (uključujući devDependencies za build)
+RUN npm install --legacy-peer-deps
 
 # ============================================
 # Stage 2: Builder
@@ -29,8 +26,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Generiši Prisma Client
-RUN npm install -g prisma@6
-RUN prisma generate
+RUN npx prisma generate
 
 # Build Next.js aplikaciju
 # Disable telemetry tokom build-a

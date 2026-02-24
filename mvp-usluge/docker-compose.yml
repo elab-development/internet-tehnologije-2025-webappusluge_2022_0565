@@ -44,6 +44,10 @@ services:
       
       # Node environment
       NODE_ENV: production
+      
+      # Email (Resend)
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL:-MVP Usluge <noreply@mvp-usluge.com>}
     depends_on:
       db:
         condition: service_healthy
