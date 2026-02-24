@@ -8,6 +8,7 @@ import {
   handleApiError,
 } from "@/lib/api-utils";
 import { UserRole } from "@prisma/client";
+import { sendWelcomeEmail } from '@/lib/email';
 
 /**
  * @swagger
@@ -143,6 +144,14 @@ export async function POST(req: NextRequest) {
         createdAt: true,
       },
     });
+
+    // 🆕 Pošalji welcome email
+    try {
+      await sendWelcomeEmail(user.email, user.firstName);
+    } catch (error) {
+      console.error('Failed to send welcome email:', error);
+      // Ne blokiraj registraciju ako email ne uspe
+    }
 
     return successResponse(
       user,

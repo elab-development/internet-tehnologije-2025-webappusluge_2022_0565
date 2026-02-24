@@ -369,3 +369,41 @@ API koristi **JWT tokene** (NextAuth.js). Za zaštićene rute:
 - 422 - Validation Error
 - 500 - Internal Server Error
 - 503 - Service Unavailable
+## 📧 Email Notifikacije
+
+Aplikacija koristi **Resend** za slanje email notifikacija.
+
+### **Tipovi email-ova:**
+
+| Događaj | Primalac | Trigger |
+|---------|----------|---------|
+| **Welcome Email** | Novi korisnik | Registracija |
+| **Nova rezervacija** | Pružalac | Klijent zakazao termin |
+| **Potvrda rezervacije** | Klijent | Pružalac potvrdio |
+| **Otkazivanje** | Oba | Bilo ko otkazao |
+| **Podsetnik 24h** | Klijent | Cron job (svaki dan u 09:00) |
+| **Nova ocena** | Pružalac | Klijent ostavio ocenu |
+
+### **Setup (Development):**
+
+1. Registruj se na [Resend](https://resend.com/)
+2. Kreiraj API key
+3. Dodaj u `.env.local`:
+```env
+RESEND_API_KEY="re_xxxxxxxxxxxx"
+RESEND_FROM_EMAIL="MVP Usluge <onboarding@resend.dev>"
+```
+
+### **Setup (Production):**
+
+1. Verifikuj domen na Resend
+2. Koristi custom email (npr. `noreply@mvp-usluge.com`)
+3. Dodaj environment varijable na Vercel
+
+### **Cron Job:**
+GitHub Actions automatski pokreće `/api/cron/send-reminders` svaki dan u 09:00 UTC.
+
+Ručno pokretanje:
+1. Idi na GitHub → Actions
+2. Odaberi "Send Booking Reminders"
+3. Klikni "Run workflow"

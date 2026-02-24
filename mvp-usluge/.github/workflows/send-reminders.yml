@@ -1,0 +1,19 @@
+name: Send Booking Reminders
+
+on:
+  schedule:
+    # Pokreće se svaki dan u 09:00 UTC (11:00 CET)
+    - cron: '0 9 * * *'
+  workflow_dispatch: # Omogućava ručno pokretanje
+
+jobs:
+  send-reminders:
+    name: Send Email Reminders
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Send reminders via API
+        run: |
+          curl -X POST https://mvp-usluge.vercel.app/api/cron/send-reminders \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json"
