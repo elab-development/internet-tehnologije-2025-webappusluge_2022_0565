@@ -91,10 +91,83 @@ export async function GET(req: NextRequest) {
  * @swagger
  * /api/workers:
  *   post:
- *     summary: Kreira novog radnika
+ *     summary: Kreira novog radnika u preduzeću
+ *     description: Zaštićena ruta - samo COMPANY korisnici mogu dodavati radnike. Maksimalno 100 radnika po preduzeću.
  *     tags: [Workers]
  *     security:
  *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - firstName
+ *               - lastName
+ *               - position
+ *             properties:
+ *               firstName:
+ *                 type: string
+ *                 minLength: 2
+ *                 maxLength: 50
+ *                 example: Milan
+ *               lastName:
+ *                 type: string
+ *                 minLength: 2
+ *                 maxLength: 50
+ *                 example: Milanović
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 nullable: true
+ *                 example: milan@company.com
+ *               phone:
+ *                 type: string
+ *                 pattern: '^\+?[0-9]{9,15}$'
+ *                 nullable: true
+ *                 example: "+381601234567"
+ *               position:
+ *                 type: string
+ *                 minLength: 2
+ *                 maxLength: 100
+ *                 example: Senior Frizer
+ *               specializations:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 example:
+ *                   - Muško šišanje
+ *                   - Farbanje
+ *                   - Tretmani
+ *               profileImage:
+ *                 type: string
+ *                 format: uri
+ *                 nullable: true
+ *                 example: "https://example.com/worker.jpg"
+ *               isActive:
+ *                 type: boolean
+ *                 default: true
+ *     responses:
+ *       201:
+ *         description: Radnik uspešno kreiran
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   $ref: '#/components/schemas/Worker'
+ *       400:
+ *         description: Nevaljani podaci ili dostignut maksimalan broj radnika
+ *       401:
+ *         description: Neautorizovan pristup
+ *       403:
+ *         description: Samo preduzeća mogu dodavati radnike
+ *       409:
+ *         description: Radnik sa ovim email-om već postoji
  */
 export async function POST(req: NextRequest) {
     try {

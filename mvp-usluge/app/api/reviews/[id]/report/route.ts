@@ -4,8 +4,27 @@ import { successResponse, errorResponse, handleApiError } from "@/lib/api-utils"
 import { getCurrentUser } from "@/lib/auth-helpers";
 
 /**
- * POST /api/reviews/[id]/report
- * Prijavljuje neprikladnu ocenu
+ * @swagger
+ * /api/reviews/{id}/report:
+ *   post:
+ *     summary: Prijavljuje neprikladnu ocenu
+ *     tags: [Reviews]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Ocena prijavljeno za pregled
+ *       401:
+ *         description: Neautorizovan pristup
+ *       404:
+ *         description: Ocena nije pronađena
  */
 export async function POST(
   req: NextRequest,

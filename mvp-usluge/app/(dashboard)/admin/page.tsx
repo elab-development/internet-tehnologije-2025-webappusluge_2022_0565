@@ -25,7 +25,10 @@ export default async function AdminDashboardPage() {
                         <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
                         <p className="text-gray-600 mt-1">Globalna analitika platforme</p>
                     </div>
-                    <div className="flex gap-3">
+                    <div className="flex gap-3 flex-wrap">
+                        <Link href="/admin/bookings" className="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-white hover:bg-red-700 focus:outline-none transition">
+                            Rezervacije
+                        </Link>
                         <Link href="/admin/categories" className="inline-flex items-center px-4 py-2 bg-purple-600 border border-transparent rounded-md font-semibold text-white hover:bg-purple-700 focus:outline-none transition">
                             Kategorije
                         </Link>

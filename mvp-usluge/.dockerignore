@@ -1,44 +1,57 @@
-# Dependencies
-node_modules
-npm-debug.log
-yarn-error.log
-
-# Next.js
-.next
-out
-build
-
-# Environment files
-.env
-.env*.local
-
 # Git
 .git
 .gitignore
+.gitattributes
+
+# Dependencies
+node_modules
+npm-debug.log
+npm-cache
+yarn-error.log
+
+# Build artifacts
+.next
+.turbo
+dist
+build
 
 # IDE
 .vscode
 .idea
 *.swp
 *.swo
-*~
-
-# OS
 .DS_Store
-Thumbs.db
 
-# Testing
-coverage
-.nyc_output
-
-# Misc
-*.md
-!README.md
-.editorconfig
-.eslintrc
-.prettierrc
+# Environment
+.env
+.env.local
+.env.*.local
 
 # Docker
 Dockerfile
 docker-compose.yml
 .dockerignore
+
+# Testing
+jest.config.js
+.jest
+coverage
+
+# CI/CD
+.github
+.gitlab-ci.yml
+.circleci
+
+# Documentation
+README.md
+TESTING_WORKFLOW.md
+CRON_DEPLOYMENT_GUIDE.md
+REDIS_UPSTASH_GUIDE.md
+REVIEW_REPORTING_GUIDE.md
+TEST_DELETION_SCENARIOS.md
+
+# Misc
+.vercel
+.env.example
+.prettierrc
+.eslintrc.json

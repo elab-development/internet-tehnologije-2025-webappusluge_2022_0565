@@ -7,8 +7,65 @@ import { UserRole } from "@prisma/client";
 import { validateUUID } from '@/lib/sanitize';
 
 /**
- * GET /api/services/[id]
- * Javna ruta - vraća detalje jedne usluge
+ * @swagger
+ * /api/services/{id}:
+ *   get:
+ *     summary: Vraća detalje jedne usluge
+ *     tags: [Services]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Detalji usluge
+ *       404:
+ *         description: Usluga nije pronađena
+ *   put:
+ *     summary: Ažurira uslugu
+ *     tags: [Services]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Usluga ažurirana
+ *       401:
+ *         description: Neautorizovan pristup
+ *       403:
+ *         description: Nemate dozvolu
+ *       404:
+ *         description: Usluga nije pronađena
+ *   delete:
+ *     summary: Briše uslugu
+ *     tags: [Services]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Usluga obrisana
+ *       401:
+ *         description: Neautorizovan pristup
+ *       403:
+ *         description: Nemate dozvolu
+ *       404:
+ *         description: Usluga nije pronađena
  */
 export async function GET(
   req: NextRequest,

@@ -153,6 +153,11 @@ export default async function DashboardPage() {
                   <Button variant="outline">Admin Panel</Button>
                 </Link>
               )}
+              {(user.role === 'FREELANCER' || user.role === 'COMPANY') && (
+                <Link href="/dashboard/services">
+                  <Button variant="outline">Moje Usluge</Button>
+                </Link>
+              )}
               <Link href="/services">
                 <Button variant="outline">Pregledaj usluge</Button>
               </Link>

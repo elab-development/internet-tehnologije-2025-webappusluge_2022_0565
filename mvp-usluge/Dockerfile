@@ -1,75 +1,49 @@
-# Stage 1: Dependencies
-FROM node:22-alpine AS deps
-
-# Instaliraj libc6-compat za kompatibilnost sa Alpine Linux-om
-RUN apk add --no-cache libc6-compat
+# ========== BUILD STAGE ==========
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Kopiraj package.json i package-lock.json
+# Install dependencies
 COPY package*.json ./
-
-# Instaliraj SVE dependencies (uključujući devDependencies za build)
 RUN npm install --legacy-peer-deps
 
-# ============================================
-# Stage 2: Builder
-# ============================================
-FROM node:22-alpine AS builder
+# Copy prisma schema
+COPY prisma ./prisma
 
-WORKDIR /app
+# Generate Prisma client (use local prisma from node_modules)
+RUN ./node_modules/.bin/prisma generate
 
-# Kopiraj dependencies iz prethodnog stage-a
-COPY --from=deps /app/node_modules ./node_modules
-
-# Kopiraj ceo projekat
+# Copy source code
 COPY . .
 
-# Generiši Prisma Client
-RUN npx prisma generate
+# Build for production
+RUN NODE_ENV=production npm run build
 
-# Build Next.js aplikaciju
-# Disable telemetry tokom build-a
-ENV NEXT_TELEMETRY_DISABLED 1
-
-RUN npm run build
-
-# ============================================
-# Stage 3: Runner (Production)
-# ============================================
-FROM node:22-alpine AS runner
+# ========== RUNTIME STAGE ==========
+FROM node:20-alpine
 
 WORKDIR /app
 
-# Kreiraj non-root korisnika za sigurnost
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+# Install netcat for database readiness check
+RUN apk add --no-cache netcat-openbsd
 
-# Kopiraj public folder
+# Install only production dependencies
+COPY package*.json ./
+RUN npm install --legacy-peer-deps --omit=dev
+
+# Copy prisma schema
+COPY prisma ./prisma
+
+# Copy built application from builder
+COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
-
-# Kopiraj built aplikaciju
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-
-# Kopiraj Prisma schema i migrations
-COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 
-# Prebaci se na non-root korisnika
-USER nextjs
+# Copy init script
+COPY docker-init.sh /app/docker-init.sh
+RUN chmod +x /app/docker-init.sh
 
-# Expose port
 EXPOSE 3000
 
-ENV PORT 3000
-ENV HOSTNAME "0.0.0.0"
-ENV NEXT_TELEMETRY_DISABLED 1
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=40s \
-  CMD node -e "require('http').get('http://localhost:3000/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
-
-# Startuj aplikaciju
-CMD ["node", "server.js"]
+# Run init script that handles migrations, seed, and starts app
+CMD ["/app/docker-init.sh"]

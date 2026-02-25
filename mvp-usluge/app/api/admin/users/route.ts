@@ -4,6 +4,20 @@ import { successResponse, errorResponse } from '@/lib/api-utils';
 import { getCurrentUser } from '@/lib/auth-helpers';
 import { UserRole } from '@prisma/client';
 
+/**
+ * @swagger
+ * /api/admin/users:
+ *   get:
+ *     summary: Vraća sve korisnike
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista korisnika
+ *       403:
+ *         description: Samo administratori mogu pristupiti
+ */
 export async function GET(req: NextRequest) {
     const user = await getCurrentUser();
     if (!user || user.role !== UserRole.ADMIN) {

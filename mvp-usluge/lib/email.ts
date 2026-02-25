@@ -9,6 +9,14 @@ const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'MVP Usluge <noreply@mvp-usl
  */
 async function sendEmail(to: string, subject: string, html: string) {
   try {
+    console.log('📧 Attempting to send email:', {
+      from: FROM_EMAIL,
+      to,
+      subject,
+      apiKeyExists: !!process.env.RESEND_API_KEY,
+      apiKeyPreview: process.env.RESEND_API_KEY?.substring(0, 10) + '...',
+    });
+
     const { data, error } = await resend.emails.send({
       from: FROM_EMAIL,
       to,
@@ -17,14 +25,29 @@ async function sendEmail(to: string, subject: string, html: string) {
     });
 
     if (error) {
-      console.error('Email sending error:', error);
+      console.error('❌ Email sending error:', {
+        error,
+        to,
+        subject,
+        errorMessage: error.message || error,
+      });
       return { success: false, error };
     }
 
-    console.log('Email sent successfully:', data);
+    console.log('✅ Email sent successfully:', {
+      id: data?.id,
+      from: FROM_EMAIL,
+      to,
+      subject,
+    });
     return { success: true, data };
   } catch (error) {
-    console.error('Email sending error:', error);
+    console.error('❌ Email sending exception:', {
+      error,
+      errorMessage: error instanceof Error ? error.message : String(error),
+      to,
+      subject,
+    });
     return { success: false, error };
   }
 }
@@ -434,10 +457,15 @@ export async function sendEmailVerification(to: string, firstName: string, token
 
 /**
  * 8. Resetovanje lozinke
+ * NOTE: Za testiranje sa besplatnim Resend planom, hardcodeovani email
+ * Email se uvek šalje na risticcaleksandra@gmail.com (registrovana adresa)
  */
 export async function sendPasswordReset(to: string, firstName: string, token: string) {
   const subject = 'Resetovanje lozinke';
   const resetUrl = `${process.env.NEXTAUTH_URL}/auth/reset-password?token=${token}`;
+
+  // 🔧 HARDCODED: Za besplatni Resend plan, šalji na registrovanu adresu
+  const hardcodedEmail = 'risticcaleksandra@gmail.com';
 
   const html = `
     <!DOCTYPE html>
@@ -450,6 +478,7 @@ export async function sendPasswordReset(to: string, firstName: string, token: st
           .header { background: #ef4444; color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
           .content { background: #f9fafb; padding: 30px; text-align: center; border-radius: 0 0 8px 8px; }
           .button { display: inline-block; background: #ef4444; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+          .demo-note { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; font-size: 14px; color: #92400e; }
         </style>
       </head>
       <body>
@@ -463,11 +492,22 @@ export async function sendPasswordReset(to: string, firstName: string, token: st
             <a href="${resetUrl}" class="button" style="color: white;">Resetuj lozinku</a>
             <p>Link prestaje da važi za 1 sat.</p>
             <p>Ako niste zatražili resetovanje lozinke, možete ignorisati ovu poruku.</p>
+
+            <div class="demo-note">
+              <strong>ℹ️ Demo napomena:</strong> Ova poruka je poslata sa demo Resend naloga.
+              U produkciji, link bi bio proslađen direktno korisniku na njegovu email adresu (${to}).
+            </div>
           </div>
         </div>
       </body>
     </html>
   `;
 
-  return sendEmail(to, subject, html);
+  console.log('📬 Password reset email routing:', {
+    originalEmail: to,
+    redirectedTo: hardcodedEmail,
+    reason: 'Besplatni Resend plan ograničenja - testiranje',
+  });
+
+  return sendEmail(hardcodedEmail, subject, html);
 }

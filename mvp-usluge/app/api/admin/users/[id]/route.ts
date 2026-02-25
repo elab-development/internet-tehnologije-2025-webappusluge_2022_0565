@@ -4,6 +4,38 @@ import { successResponse, errorResponse } from '@/lib/api-utils';
 import { getCurrentUser } from '@/lib/auth-helpers';
 import { UserRole } from '@prisma/client';
 
+/**
+ * @swagger
+ * /api/admin/users/{id}:
+ *   patch:
+ *     summary: Aktivira/deaktivira korisnika
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               isActive:
+ *                 type: boolean
+ *     responses:
+ *       200:
+ *         description: Nalog aktiviran/deaktiviran
+ *       400:
+ *         description: Ne možete deaktivirati sopstveni nalog
+ *       403:
+ *         description: Samo administratori mogu pristupiti
+ */
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const user = await getCurrentUser();
     if (!user || user.role !== UserRole.ADMIN) {

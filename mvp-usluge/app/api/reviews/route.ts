@@ -9,11 +9,97 @@ import { sendNewReviewNotification } from '@/lib/email';
 import { sanitizeText } from '@/lib/sanitize';
 
 /**
- * GET /api/reviews
- * Vraća ocene
- * Query parametri:
- * - targetId: ID pružaoca (za prikaz ocena na profilu)
- * - serviceId: ID usluge (za prikaz ocena za uslugu)
+ * @swagger
+ * /api/reviews:
+ *   get:
+ *     summary: Vraća listu ocena
+ *     description: Vraća ocene filtrirane po pružaocu ili uslugama sa statistikom
+ *     tags: [Reviews]
+ *     parameters:
+ *       - in: query
+ *         name: targetId
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID pružaoca (za prikaz ocena na profilu)
+ *         example: 550e8400-e29b-41d4-a716-446655440000
+ *       - in: query
+ *         name: serviceId
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID usluge (za prikaz ocena za uslugu)
+ *         example: 550e8400-e29b-41d4-a716-446655440001
+ *     responses:
+ *       200:
+ *         description: Lista ocena sa statistikom
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     reviews:
+ *                       type: array
+ *                       items:
+ *                         allOf:
+ *                           - $ref: '#/components/schemas/Review'
+ *                           - type: object
+ *                             properties:
+ *                               author:
+ *                                 type: object
+ *                                 properties:
+ *                                   id:
+ *                                     type: string
+ *                                   firstName:
+ *                                     type: string
+ *                                   lastName:
+ *                                     type: string
+ *                               target:
+ *                                 type: object
+ *                                 properties:
+ *                                   id:
+ *                                     type: string
+ *                                   firstName:
+ *                                     type: string
+ *                                   lastName:
+ *                                     type: string
+ *                                   companyName:
+ *                                     type: string
+ *                     stats:
+ *                       type: object
+ *                       properties:
+ *                         total:
+ *                           type: integer
+ *                           example: 12
+ *                         averageRating:
+ *                           type: number
+ *                           format: double
+ *                           example: 4.5
+ *                         distribution:
+ *                           type: object
+ *                           properties:
+ *                             5:
+ *                               type: integer
+ *                               example: 8
+ *                             4:
+ *                               type: integer
+ *                               example: 3
+ *                             3:
+ *                               type: integer
+ *                               example: 1
+ *                             2:
+ *                               type: integer
+ *                               example: 0
+ *                             1:
+ *                               type: integer
+ *                               example: 0
+ *       400:
+ *         description: Nevaljani parametri
  */
 export async function GET(req: NextRequest) {
   try {

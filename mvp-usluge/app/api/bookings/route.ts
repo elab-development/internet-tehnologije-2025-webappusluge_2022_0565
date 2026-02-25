@@ -57,10 +57,17 @@ export async function GET(req: NextRequest) {
 
     // Where uslovi zavisno od uloge
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const where: any =
-      user.role === UserRole.CLIENT
-        ? { clientId: user.id }
-        : { providerId: user.id };
+    const where: any = {};
+
+    // Admin vidi SVE rezervacije, ostali vide samo svoje
+    if (user.role !== UserRole.ADMIN) {
+      if (user.role === UserRole.CLIENT) {
+        where.clientId = user.id;
+      } else {
+        // Pružaoci (FREELANCER, COMPANY) vide samo svoje
+        where.providerId = user.id;
+      }
+    }
 
     // Filter po statusu (opciono)
     if (status) {

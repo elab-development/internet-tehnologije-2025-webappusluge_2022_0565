@@ -1,6 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { checkAndUpdateCompanyVerification } from '@/lib/verification';
 
+/**
+ * @swagger
+ * /api/cron/verify-companies:
+ *   get:
+ *     summary: Proverava i ažurira verifikaciju preduzeća
+ *     description: Cron job - proverava da li su preduzeća verifikovana
+ *     tags: [Cron]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Verifikacija obavljena
+ *       401:
+ *         description: Unauthorized (zahteva CRON_SECRET)
+ *   post:
+ *     summary: Proverava i ažurira verifikaciju preduzeća
+ *     description: Cron job - proverava da li su preduzeća verifikovana
+ *     tags: [Cron]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Verifikacija obavljena
+ *       401:
+ *         description: Unauthorized (zahteva CRON_SECRET)
+ */
 export async function GET(req: NextRequest) {
     try {
         // 🔒 Zaštita endpoint-a

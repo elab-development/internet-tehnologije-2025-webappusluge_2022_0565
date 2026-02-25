@@ -3,8 +3,39 @@ import { prisma } from "@/lib/db/prisma";
 import { successResponse, errorResponse } from "@/lib/api-utils";
 
 /**
- * GET /api/auth/check-email?email=test@example.com
- * Provera da li email već postoji u sistemu
+ * @swagger
+ * /api/auth/check-email:
+ *   get:
+ *     summary: Proverava dostupnost email adrese
+ *     description: Javna ruta - vraća da li je email dostupan za registraciju
+ *     tags: [Auth]
+ *     parameters:
+ *       - in: query
+ *         name: email
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: email
+ *         description: Email adresa za proveru
+ *     responses:
+ *       200:
+ *         description: Provera uspešna
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     available:
+ *                       type: boolean
+ *                     message:
+ *                       type: string
+ *       400:
+ *         description: Email parametar je obavezan
  */
 export async function GET(req: NextRequest) {
   try {

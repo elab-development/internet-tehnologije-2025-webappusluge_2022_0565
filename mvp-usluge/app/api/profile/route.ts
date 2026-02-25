@@ -16,6 +16,64 @@ const profileSchema = z.object({
     profileImage: z.string().url().max(500).optional().or(z.literal("")),
 });
 
+/**
+ * @swagger
+ * /api/profile:
+ *   get:
+ *     summary: Vraća profil trenutnog korisnika
+ *     tags: [Profile]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Profil uspešno vraćen
+ *       401:
+ *         description: Neautorizovan pristup
+ *       404:
+ *         description: Korisnik nije pronađen
+ *   put:
+ *     summary: Ažurira profil korisnika
+ *     tags: [Profile]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               firstName:
+ *                 type: string
+ *               lastName:
+ *                 type: string
+ *               phone:
+ *                 type: string
+ *               bio:
+ *                 type: string
+ *               city:
+ *                 type: string
+ *               address:
+ *                 type: string
+ *               profileImage:
+ *                 type: string
+ *                 format: uri
+ *     responses:
+ *       200:
+ *         description: Profil uspešno ažuriran
+ *       401:
+ *         description: Neautorizovan pristup
+ *   delete:
+ *     summary: Deaktivira nalog korisnika
+ *     tags: [Profile]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Nalog uspešno deaktiviran
+ *       401:
+ *         description: Neautorizovan pristup
+ */
 export async function GET(req: NextRequest) {
     try {
         const currentUser = await getCurrentUser();

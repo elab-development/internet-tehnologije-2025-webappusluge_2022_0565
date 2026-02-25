@@ -4,6 +4,38 @@ import { verifyToken } from "@/lib/jwt";
 import { successResponse, errorResponse } from "@/lib/api-utils";
 import { hash } from "bcryptjs";
 
+/**
+ * @swagger
+ * /api/auth/reset-password:
+ *   post:
+ *     summary: Resetuje lozinku sa validnim tokenom
+ *     description: Javna ruta - resetuje lozinku korisnika
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - token
+ *               - newPassword
+ *             properties:
+ *               token:
+ *                 type: string
+ *                 description: JWT token iz forgot-password email-a
+ *               newPassword:
+ *                 type: string
+ *                 minLength: 6
+ *                 example: noveLozinka123
+ *     responses:
+ *       200:
+ *         description: Lozinka uspešno promenjena
+ *       400:
+ *         description: Token nevalidan, istekao ili već iskorišćen
+ *       404:
+ *         description: Korisnik nije pronađen
+ */
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();

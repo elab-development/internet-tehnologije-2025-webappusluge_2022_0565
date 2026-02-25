@@ -5,8 +5,29 @@ import { getCurrentUser } from '@/lib/auth-helpers';
 import { validateUUID } from '@/lib/sanitize';
 
 /**
- * DELETE /api/calendar/working-hours/[id]
- * Briše radno vreme
+ * @swagger
+ * /api/calendar/working-hours/{id}:
+ *   delete:
+ *     summary: Briše radno vreme
+ *     tags: [Calendar]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Radno vreme obrisano
+ *       401:
+ *         description: Neautorizovan pristup
+ *       403:
+ *         description: Nemate dozvolu
+ *       404:
+ *         description: Radno vreme nije pronađeno
  */
 export async function DELETE(
     req: NextRequest,

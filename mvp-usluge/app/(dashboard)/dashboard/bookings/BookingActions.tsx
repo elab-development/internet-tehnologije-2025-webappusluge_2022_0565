@@ -42,6 +42,32 @@ export default function BookingActions({ bookingId, status, role, reviewId }: Bo
         }
     };
 
+    const handleDelete = async () => {
+        if (!window.confirm("Jeste li sigurni da želite obrisati ovu rezervaciju? Ova akcija se ne može poništiti.")) return;
+
+        setLoading("DELETE");
+
+        try {
+            const response = await fetch(`/api/bookings/${bookingId}`, {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || "Došlo je do greške");
+            }
+
+            alert("Rezervacija je uspešno obrisana!");
+            router.refresh();
+        } catch (error: any) {
+            alert(error.message);
+        } finally {
+            setLoading(null);
+        }
+    };
+
     if (role === "CLIENT") {
         if (status === "PENDING" || status === "CONFIRMED") {
             return (
@@ -53,6 +79,17 @@ export default function BookingActions({ bookingId, status, role, reviewId }: Bo
                     isLoading={loading === "CANCELLED"}
                 >
                     Otkaži
+                </Button>
+            );
+        } else if (status === "CANCELLED" || status === "REJECTED") {
+            return (
+                <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={handleDelete}
+                    isLoading={loading === "DELETE"}
+                >
+                    🗑️ Obriši
                 </Button>
             );
         } else if (status === "COMPLETED") {

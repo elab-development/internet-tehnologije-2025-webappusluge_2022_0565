@@ -18,8 +18,71 @@ const updateWorkerSchema = z.object({
 });
 
 /**
- * GET /api/workers/[id]
- * Vraća detalje jednog radnika
+ * @swagger
+ * /api/workers/{id}:
+ *   get:
+ *     summary: Vraća detalje jednog radnika
+ *     tags: [Workers]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Detalji radnika
+ *       401:
+ *         description: Neautorizovan pristup
+ *       403:
+ *         description: Nemate pristup
+ *       404:
+ *         description: Radnik nije pronađen
+ *   patch:
+ *     summary: Ažurira radnika
+ *     tags: [Workers]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Radnik ažuriran
+ *       401:
+ *         description: Neautorizovan pristup
+ *       403:
+ *         description: Nemate dozvolu
+ *       404:
+ *         description: Radnik nije pronađen
+ *   delete:
+ *     summary: Briše radnika
+ *     tags: [Workers]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Radnik deaktiviran
+ *       401:
+ *         description: Neautorizovan pristup
+ *       403:
+ *         description: Nemate dozvolu
+ *       404:
+ *         description: Radnik nije pronađen
  */
 export async function GET(
     req: NextRequest,
@@ -216,13 +279,12 @@ export async function DELETE(
             );
         }
 
-        // Soft delete
-        await prisma.worker.update({
+        // Hard delete - potpuno uklanja radnika iz sistema
+        await prisma.worker.delete({
             where: { id },
-            data: { isActive: false },
         });
 
-        return successResponse(null, 'Radnik uspešno deaktiviran');
+        return successResponse(null, 'Radnik uspešno obrisan');
     } catch (error) {
         return handleApiError(error);
     }

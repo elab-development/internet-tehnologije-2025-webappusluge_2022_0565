@@ -6,8 +6,65 @@ import { updateCategorySchema } from "@/lib/validations/category";
 import { UserRole } from "@prisma/client";
 
 /**
- * GET /api/categories/[id]
- * Javna ruta - vraća detalje jedne kategorije
+ * @swagger
+ * /api/categories/{id}:
+ *   get:
+ *     summary: Vraća detalje jedne kategorije
+ *     tags: [Categories]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Detalji kategorije
+ *       404:
+ *         description: Kategorija nije pronađena
+ *   put:
+ *     summary: Ažurira kategoriju
+ *     tags: [Categories]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Kategorija ažurirana
+ *       401:
+ *         description: Neautorizovan pristup
+ *       403:
+ *         description: Samo administratori mogu menjati kategorije
+ *       404:
+ *         description: Kategorija nije pronađena
+ *   delete:
+ *     summary: Briše kategoriju
+ *     tags: [Categories]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Kategorija obrisana
+ *       401:
+ *         description: Neautorizovan pristup
+ *       403:
+ *         description: Samo administratori mogu brisati kategorije
+ *       404:
+ *         description: Kategorija nije pronađena
  */
 export async function GET(
   req: NextRequest,

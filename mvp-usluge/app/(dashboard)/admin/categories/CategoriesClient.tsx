@@ -80,7 +80,7 @@ export default function CategoriesClient() {
 
         try {
             const url = id ? `/api/categories/${id}` : "/api/categories";
-            const method = id ? "PATCH" : "POST";
+            const method = id ? "PUT" : "POST";
 
             const payload: any = {
                 name,

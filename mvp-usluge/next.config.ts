@@ -1,14 +1,14 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Enable standalone output for Docker
-  output: 'standalone',
-
   // Disable powered-by header
   poweredByHeader: false,
 
   // Compress responses
   compress: true,
+
+  // React verzija sa poboljšavanjem za third-party biblioteke
+  reactStrictMode: true,
 
   // 🛡 SECURITY HEADERS
   async headers() {

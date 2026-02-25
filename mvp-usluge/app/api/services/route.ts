@@ -122,16 +122,23 @@ export async function GET(req: NextRequest) {
 
     // Prisma where uslovi
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const where: any = {
-      isActive: true,
-    };
+    const where: any = {};
+
+    // 🆕 Ako je providerId specificiran, prikaži sve usluge tog pružaoca (i aktivne i neaktivne)
+    // Inače prikaži samo aktivne usluge
+    if (providerId) {
+      where.providerId = providerId;
+      // Ako gledam svoje usluge (providerId = moj ID), prikaži sve
+      // Inače prikaži samo aktivne
+      if (user?.id !== providerId) {
+        where.isActive = true;
+      }
+    } else {
+      where.isActive = true;
+    }
 
     if (categoryId) {
       where.categoryId = categoryId;
-    }
-
-    if (providerId) {
-      where.providerId = providerId;
     }
 
     if (search) {

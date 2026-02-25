@@ -8,8 +8,65 @@ import { UserRole } from "@prisma/client";
 import { validateUUID, sanitizeText } from '@/lib/sanitize';
 
 /**
- * GET /api/reviews/[id]
- * Vraća detalje jedne ocene
+ * @swagger
+ * /api/reviews/{id}:
+ *   get:
+ *     summary: Vraća detalje jedne ocene
+ *     tags: [Reviews]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Detalji ocene
+ *       404:
+ *         description: Ocena nije pronađena
+ *   patch:
+ *     summary: Ažurira ocenu ili dodaje odgovor
+ *     tags: [Reviews]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Ocena ažurirana
+ *       401:
+ *         description: Neautorizovan pristup
+ *       403:
+ *         description: Nemate dozvolu
+ *       404:
+ *         description: Ocena nije pronađena
+ *   delete:
+ *     summary: Briše ocenu
+ *     tags: [Reviews]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Ocena obrisana
+ *       401:
+ *         description: Neautorizovan pristup
+ *       403:
+ *         description: Nemate dozvolu
+ *       404:
+ *         description: Ocena nije pronađena
  */
 export async function GET(
   req: NextRequest,
@@ -160,15 +217,16 @@ export async function PATCH(
       };
 
       const validatedData = updateReviewSchema.parse(sanitizedBody);
-      // Proveri da li je prošlo više od 24h
+      // Proveri da li je prošlo više od 7 dana
       const createdAt = new Date(existingReview.createdAt);
       const now = new Date();
       const hoursSinceCreation =
         (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
+      const EDIT_WINDOW_HOURS = 7 * 24; // 7 dana
 
-      if (hoursSinceCreation > 24) {
+      if (hoursSinceCreation > EDIT_WINDOW_HOURS) {
         return errorResponse(
-          "Ocene se mogu menjati samo u roku od 24h",
+          "Ocene se mogu menjati samo u roku od 7 dana",
           400
         );
       }
@@ -245,16 +303,17 @@ export async function DELETE(
       return errorResponse("Nemate dozvolu da obrišete ovu ocenu", 403);
     }
 
-    // Autor može obrisati samo u roku od 24h
+    // Autor može obrisati samo u roku od 7 dana
     if (review.authorId === user.id && user.role !== UserRole.ADMIN) {
       const createdAt = new Date(review.createdAt);
       const now = new Date();
       const hoursSinceCreation =
         (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
+      const DELETE_WINDOW_HOURS = 7 * 24; // 7 dana
 
-      if (hoursSinceCreation > 24) {
+      if (hoursSinceCreation > DELETE_WINDOW_HOURS) {
         return errorResponse(
-          "Ocene se mogu brisati samo u roku od 24h",
+          "Ocene se mogu brisati samo u roku od 7 dana",
           400
         );
       }

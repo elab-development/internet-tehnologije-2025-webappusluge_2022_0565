@@ -10,8 +10,86 @@ import { format } from 'date-fns';
 import { sr } from 'date-fns/locale';
 
 /**
- * GET /api/bookings/[id]
- * Vraća detalje jedne rezervacije
+ * @swagger
+ * /api/bookings/{id}:
+ *   get:
+ *     summary: Vraća detalje jedne rezervacije
+ *     tags: [Bookings]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Detalji rezervacije
+ *       401:
+ *         description: Neautorizovan pristup
+ *       403:
+ *         description: Nemate pristup ovoj rezervaciji
+ *       404:
+ *         description: Rezervacija nije pronađena
+ *   patch:
+ *     summary: Menja status rezervacije
+ *     tags: [Bookings]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [PENDING, CONFIRMED, COMPLETED, CANCELLED, REJECTED]
+ *               providerNotes:
+ *                 type: string
+ *               workerId:
+ *                 type: string
+ *                 format: uuid
+ *     responses:
+ *       200:
+ *         description: Status promenjen
+ *       401:
+ *         description: Neautorizovan pristup
+ *       403:
+ *         description: Nemate dozvolu
+ *       404:
+ *         description: Rezervacija nije pronađena
+ *   delete:
+ *     summary: Briše rezervaciju
+ *     tags: [Bookings]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Rezervacija obrisana
+ *       401:
+ *         description: Neautorizovan pristup
+ *       403:
+ *         description: Nemate dozvolu
+ *       404:
+ *         description: Rezervacija nije pronađena
  */
 export async function GET(
   req: NextRequest,
@@ -359,7 +437,7 @@ export async function DELETE(
     }
 
     // Može se obrisati samo ako je CANCELLED ili REJECTED
-    if (!([BookingStatus.CANCELLED, BookingStatus.REJECTED] as BookingStatus[]).includes(booking.status)) {
+    if (booking.status !== "CANCELLED" && booking.status !== "REJECTED") {
       return errorResponse(
         "Možete obrisati samo otkazane ili odbijene rezervacije",
         400

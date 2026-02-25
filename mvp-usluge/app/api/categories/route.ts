@@ -6,11 +6,64 @@ import { createCategorySchema } from "@/lib/validations/category";
 import { UserRole } from "@prisma/client";
 
 /**
- * GET /api/categories
- * Javna ruta - vraća sve kategorije sa hijerarhijom
- * Query parametri:
- * - parentId: Filtriraj po roditeljskoj kategoriji
- * - includeChildren: Uključi podkategorije (default: true)
+ * @swagger
+ * /api/categories:
+ *   get:
+ *     summary: Vraća sve kategorije sa hijerarhijom
+ *     description: Javna ruta - vraća sve kategorije i podkategorije
+ *     tags: [Categories]
+ *     parameters:
+ *       - in: query
+ *         name: parentId
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Filtriraj po roditeljskoj kategoriji
+ *       - in: query
+ *         name: includeChildren
+ *         schema:
+ *           type: boolean
+ *           default: true
+ *         description: Uključi podkategorije
+ *     responses:
+ *       200:
+ *         description: Lista kategorija
+ *   post:
+ *     summary: Kreira novu kategoriju
+ *     description: Zaštićena ruta - samo ADMIN
+ *     tags: [Categories]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - slug
+ *             properties:
+ *               name:
+ *                 type: string
+ *               slug:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               iconUrl:
+ *                 type: string
+ *               parentId:
+ *                 type: string
+ *                 format: uuid
+ *     responses:
+ *       201:
+ *         description: Kategorija kreirana
+ *       401:
+ *         description: Neautorizovan pristup
+ *       403:
+ *         description: Samo administratori mogu kreirati kategorije
+ *       409:
+ *         description: Kategorija sa ovim slug-om već postoji
  */
 export async function GET(req: NextRequest) {
   try {
