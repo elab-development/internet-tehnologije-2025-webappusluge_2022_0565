@@ -21,6 +21,11 @@ jest.mock('@/lib/auth-helpers', () => ({
     getCurrentUser: jest.fn(),
 }));
 
+jest.mock('@/lib/rate-limit', () => ({
+    applyRateLimit: jest.fn().mockResolvedValue({ success: true }),
+    apiRateLimit: {},
+}));
+
 import { GET, POST } from '@/app/api/services/route';
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db/prisma';

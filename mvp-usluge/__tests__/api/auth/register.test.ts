@@ -18,12 +18,16 @@ jest.mock('bcryptjs', () => ({
 }));
 
 jest.mock('@/lib/email', () => ({
-    sendWelcomeEmail: jest.fn(),
+    sendEmailVerification: jest.fn(),
 }));
 
 jest.mock('@/lib/rate-limit', () => ({
     applyRateLimit: jest.fn(),
     authRateLimit: {},
+}));
+
+jest.mock('@/lib/jwt', () => ({
+    signToken: jest.fn(() => 'mock_token'),
 }));
 
 // Mock sanitize module da izbegnemo ESM probleme sa DOMPurify
@@ -42,7 +46,7 @@ import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { hash } from 'bcryptjs';
 import { applyRateLimit } from '@/lib/rate-limit';
-import { sendWelcomeEmail } from '@/lib/email';
+import { sendEmailVerification } from '@/lib/email';
 
 describe('POST /api/auth/register', () => {
     beforeEach(() => {
@@ -71,8 +75,11 @@ describe('POST /api/auth/register', () => {
         };
         (prisma.user.create as jest.Mock).mockResolvedValue(mockUser);
 
-        // Mock email
-        (sendWelcomeEmail as jest.Mock).mockResolvedValue({ success: true });
+        // Mock email verification
+        (sendEmailVerification as jest.Mock).mockResolvedValue({ success: true });
+
+        // Set RESEND_API_KEY so email sending is triggered
+        process.env.RESEND_API_KEY = 'test_key';
 
         // Create request
         const request = new NextRequest('http://localhost:3000/api/auth/register', {
@@ -92,7 +99,7 @@ describe('POST /api/auth/register', () => {
         expect(response.status).toBe(201);
         expect(data.success).toBe(true);
         expect(data.data.email).toBe('test@example.com');
-        expect(sendWelcomeEmail).toHaveBeenCalled();
+        expect(sendEmailVerification).toHaveBeenCalled();
     });
 
     it('should reject registration with existing email', async () => {
