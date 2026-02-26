@@ -5,15 +5,17 @@ const createJestConfig = nextJest({
 });
 
 const customJestConfig = {
-    setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+    // 🔧 VERCEL FIX: Only load setup file during testing, not during build
+    setupFilesAfterEnv: process.env.NODE_ENV === 'test' ? ['<rootDir>/jest.setup.js'] : [],
     testEnvironment: 'jest-environment-jsdom',
     moduleNameMapper: {
         '^@/(.*)$': '<rootDir>/$1',
     },
 
-    transformIgnorePatterns: [
-        'node_modules/(?!(@exodus/bytes|html-encoding-sniffer|whatwg-url|jsdom|isomorphic-dompurify|tr46|webidl-conversions)/)',
-    ],
+    // 🔧 VERCEL FIX: Simplified transformIgnorePatterns for production builds
+    transformIgnorePatterns: process.env.NODE_ENV === 'test'
+        ? ['node_modules/(?!(@exodus/bytes|html-encoding-sniffer|whatwg-url|jsdom|isomorphic-dompurify|tr46|webidl-conversions)/)']
+        : ['node_modules/'],
 
     coveragePathIgnorePatterns: ['/node_modules/'],
 };
