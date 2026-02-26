@@ -65,6 +65,10 @@ export default withAuth(
         const isProtectedRoute = protectedRoutes.some(route => path.startsWith(route));
 
         if (isProtectedRoute) {
+          // DEBUG: Log kada korisnik pokušava da pristupa zaštićenoj ruti
+          if (process.env.NODE_ENV === "development") {
+            console.log(`[MIDDLEWARE] Protected route: ${path}, Has token: ${!!token}`);
+          }
           return !!token;
         }
 

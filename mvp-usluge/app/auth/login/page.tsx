@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, FormEvent } from "react";
-import { signIn } from "next-auth/react";
+import { useState, FormEvent, useEffect } from "react";
+import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
@@ -27,11 +27,24 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   // ============================================
   // HOOKS
   // ============================================
   const router = useRouter();
+  const { data: session } = useSession();
+
+  // ============================================
+  // EFFECT - Čekaj da se session učita nakon logovanja
+  // ============================================
+  useEffect(() => {
+    if (isRedirecting && session?.user) {
+      // Session je učitan, sada je bezbedno ići na dashboard
+      console.log("Session loaded, redirecting to dashboard...", session.user);
+      window.location.href = "/dashboard";
+    }
+  }, [session, isRedirecting]);
 
   // ============================================
   // CLIENT-SIDE VALIDACIJA
@@ -94,19 +107,11 @@ export default function LoginPage() {
       }
 
       if (result?.ok) {
-        // ✅ Uspešna prijava - čekaj da se session stabilizuje na serveru
-        // Ovo je KRITIČNO na Vercel-u gde je getServerSession() spora
-        await new Promise(resolve => setTimeout(resolve, 1500));
-
-        // Prvo osvežи stranicu da učita nove cookies iz server session-a
-        router.refresh();
-
-        // Čekaj da se refresh završi i session bude dostupan
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        // Zatim redirektuj na dashboard
-        // Sada će getServerSession() imati dostupan token
-        router.push("/dashboard");
+        // ✅ Uspešna prijava - signalni setuj isRedirecting flag
+        // useEffect će čekati da se session učita i onda će prebaciti na dashboard
+        console.log("Login successful, waiting for session to be available...");
+        setIsRedirecting(true);
+        setIsLoading(false);
 
         // Nikad se ne dostiže kod ispod
         return;
