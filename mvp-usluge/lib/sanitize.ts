@@ -1,17 +1,65 @@
-import DOMPurify from 'isomorphic-dompurify';
 import validator from 'validator';
+
+// Dozvoljeni HTML tagovi za sanitizeHtml
+const ALLOWED_TAGS = new Set(['b', 'i', 'em', 'strong', 'p', 'br']);
+
+/**
+ * Uklanja nedozvoljene HTML tagove, zadržavajući samo dozvoljene.
+ * Uklanja sve atribute sa tagova.
+ */
+function stripDisallowedTags(html: string, allowedTags: Set<string>): string {
+    // Ukloni script/style tagove i njihov sadržaj
+    let result = html.replace(/<script[\s\S]*?<\/script>/gi, '');
+    result = result.replace(/<style[\s\S]*?<\/style>/gi, '');
+
+    // Ukloni event handler atribute (on*)
+    result = result.replace(/\s+on\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]*)/gi, '');
+
+    // Ukloni javascript: URLs
+    result = result.replace(/href\s*=\s*(?:"javascript:[^"]*"|'javascript:[^']*')/gi, '');
+    result = result.replace(/src\s*=\s*(?:"javascript:[^"]*"|'javascript:[^']*')/gi, '');
+
+    if (allowedTags.size === 0) {
+        // Ukloni sve tagove
+        return result.replace(/<\/?[^>]+(>|$)/g, '');
+    }
+
+    // Zameni nedozvoljene tagove, zadrži dozvoljene (bez atributa)
+    return result.replace(/<\/?([a-zA-Z][a-zA-Z0-9]*)\b[^>]*\/?>/g, (match, tagName) => {
+        const tag = tagName.toLowerCase();
+        if (allowedTags.has(tag)) {
+            // Zadrži tag ali ukloni sve atribute
+            const isClosing = match.startsWith('</');
+            const isSelfClosing = tag === 'br';
+            if (isClosing) return `</${tag}>`;
+            return isSelfClosing ? `<${tag} />` : `<${tag}>`;
+        }
+        return ''; // Ukloni nedozvoljeni tag
+    });
+}
+
+/**
+ * Dekodira HTML entitete radi zaštite od dvostrukog enkodiranja
+ */
+function decodeHtmlEntities(text: string): string {
+    return text
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#x27;/g, "'")
+        .replace(/&#x2F;/g, '/');
+}
 
 /**
  * 🛡 XSS ZAŠTITA
- * Sanitizuje HTML sadržaj i uklanja potencijalno opasne skripte
+ * Sanitizuje HTML sadržaj i uklanja potencijalno opasne skripte.
+ * Koristi lightweight server-kompatibilnu implementaciju (bez jsdom zavisnosti).
  */
 export function sanitizeHtml(dirty: string): string {
     if (!dirty) return '';
 
-    return DOMPurify.sanitize(dirty, {
-        ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'p', 'br'],
-        ALLOWED_ATTR: [],
-    });
+    return stripDisallowedTags(dirty, ALLOWED_TAGS);
 }
 
 /**
@@ -20,10 +68,9 @@ export function sanitizeHtml(dirty: string): string {
 export function sanitizeText(text: string): string {
     if (!text) return '';
 
-    return DOMPurify.sanitize(text, {
-        ALLOWED_TAGS: [],
-        ALLOWED_ATTR: [],
-    });
+    // Dekodiraj entitete pa ukloni sve tagove
+    const decoded = decodeHtmlEntities(text);
+    return stripDisallowedTags(decoded, new Set());
 }
 
 /**

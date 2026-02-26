@@ -14,7 +14,7 @@ if (process.env.NODE_ENV === 'test' || process.env.JEST_WORKER_ID !== undefined)
             '^@/(.*)$': '<rootDir>/$1',
         },
         transformIgnorePatterns: [
-            'node_modules/(?!(@exodus/bytes|html-encoding-sniffer|whatwg-url|jsdom|isomorphic-dompurify|tr46|webidl-conversions|uncrypto|@upstash)/)',
+            'node_modules/(?!(@exodus/bytes|html-encoding-sniffer|whatwg-url|jsdom|tr46|webidl-conversions|uncrypto|@upstash)/)',
         ],
         coveragePathIgnorePatterns: ['/node_modules/'],
     };

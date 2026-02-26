@@ -1,4 +1,6 @@
 import swaggerJsdoc from 'swagger-jsdoc';
+import fs from 'fs';
+import path from 'path';
 
 const options: swaggerJsdoc.Options = {
     definition: {
@@ -176,7 +178,38 @@ const options: swaggerJsdoc.Options = {
             { name: 'Analytics', description: 'Analitika i statistika' },
         ],
     },
-    apis: ['./app/api/**/*.ts'], // Putanja do API ruta sa JSDoc komentarima
 };
 
-export const swaggerSpec = swaggerJsdoc(options);
+function getApiFiles(dir: string, fileList: string[] = []): string[] {
+    const files = fs.readdirSync(dir);
+    for (const file of files) {
+        const filePath = path.join(dir, file);
+        if (fs.statSync(filePath).isDirectory()) {
+            getApiFiles(filePath, fileList);
+        } else if (file.endsWith('.ts') || file.endsWith('.js')) {
+            fileList.push(filePath.replace(/\\/g, '/'));
+        }
+    }
+    return fileList;
+}
+
+export const getSwaggerSpec = () => {
+    let apiFiles: string[] = [];
+    try {
+        const apiDir = path.join(process.cwd(), 'app', 'api');
+        apiFiles = getApiFiles(apiDir);
+        console.log("Swagger extracted file count: " + apiFiles.length);
+        if (apiFiles.length > 0) {
+            console.log("Example file: " + apiFiles[0]);
+        }
+    } catch (error) {
+        console.error('Error reading API directories for Swagger:', error);
+    }
+
+    return swaggerJsdoc({
+        ...options,
+        apis: apiFiles,
+    });
+};
+
+export const swaggerSpec = getSwaggerSpec();

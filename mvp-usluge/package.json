@@ -9,7 +9,8 @@
     "lint": "eslint .",
     "test": "jest",
     "type-check": "tsc --noEmit",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "doc": "tsx scripts/generate-swagger.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -25,7 +26,6 @@
     "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
-    "isomorphic-dompurify": "^3.0.0",
     "jsonwebtoken": "^9.0.3",
     "leaflet": "^1.9.4",
     "next": "16.1.6",
