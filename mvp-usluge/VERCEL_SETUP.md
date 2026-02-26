@@ -89,8 +89,16 @@ Tvoji `vercel.json` je sada ažuriran:
     "framework": "nextjs",
     "crons": [
         {
+            "path": "/api/cron/send-reminders",
+            "schedule": "0 8 * * *"
+        },
+        {
+            "path": "/api/cron/verify-companies",
+            "schedule": "0 3 * * *"
+        },
+        {
             "path": "/api/cron/run-migrations",
-            "schedule": "0 */12 * * *"
+            "schedule": "0 4 * * *"
         }
     ]
 }
@@ -101,26 +109,41 @@ Tvoji `vercel.json` je sada ažuriran:
 2. ✅ `next build` - Builduje Next.js aplikaciju
 3. ❌ `npx prisma migrate deploy` - **UKLONJEN** (ne može biti u build bez baze)
 
+**Cron Schedule (Hobby plan - max 1x dnevno):**
+- 🕘 04:00 - Pokreniti migracije (`run-migrations`)
+- 🕐 08:00 - Poslati podsetnike (`send-reminders`)
+- 🕒 03:00 - Verifikovati kompanije (`verify-companies`)
+
 ## 🔐 Korak 4: Pokretanje Migracija
 
 Migracije se sada pokrevaju na **dva načina**:
 
 ### Opcija A: Automatski kroz Cron (PREPORUČENO)
-- Cron job `/api/cron/run-migrations` se pokreće svakih 12 sati
+- ⏰ Cron job `/api/cron/run-migrations` se pokreće **svaki dan u 04:00**
 - **Zaštićeno** sa `CRON_SECRET` environment varijablom
-- Ako se nova migracija deployuje, biće primljena u roku od 12 sati
+- Hobby plan dozvoljava samo 1x dnevno izvršavanje
+
+> ℹ️ **Hobby plan limitacija:** Ako trebaju migracije hitnije (npr. odmah nakon novog deploymenta), trebalo bi ručno pokrenuti ili upgradovati na Pro plan
 
 ### Opcija B: Ručno Pre Prvog Deploymenta
-Ako imaš novi deployment i ne želiš da čekaš 12 sati:
+Ako imaš novi deployment sa migracijama i ne želiš da čekaš do sledećeg dana (04:00):
 
+**Alternativa 1 - Ručno iz terminala:**
 ```bash
 # Lokalno, izvrši migracije ručno:
 DATABASE_URL="tvoja-production-baza" npx prisma migrate deploy
+```
 
-# Ili kroz Vercel serverless funkciju:
-curl -X GET "https://tvoj-domen.com/api/cron/run-migrations" \
+**Alternativa 2 - Kroz serverless funkciju:**
+```bash
+# Pokreni cron ručno
+curl -X POST "https://tvoj-domen.com/api/cron/run-migrations" \
   -H "Authorization: Bearer your-cron-secret"
 ```
+
+**Alternativa 3 - Upgrade na Vercel Pro**
+- Ako trebaju česte migracije, Pro plan dozvolava više cron jobs po danu
+- https://vercel.com/pricing
 
 ## 📋 Deploy Checklist
 

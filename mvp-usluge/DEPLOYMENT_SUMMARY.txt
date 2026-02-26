@@ -1,0 +1,184 @@
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                  🚀 MVP USLUGE - VERCEL DEPLOYMENT SUMMARY                     ║
+║                         Sve što trebalo da se uvuče                             ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+
+📋 FAJLOVI KOJI SU KREIRANI/PROMENJENI:
+════════════════════════════════════════════════════════════════════════════════
+
+1️⃣  ✅ VERCEL SETUP FAJLOVI:
+   ✓ vercel.json (PROMENJEN) - Uklonjena migracija iz build, dodan cron job
+   ✓ app/api/cron/run-migrations/route.ts (NOVI) - Serverless funkcija
+   ✓ .env.production.example (NOVI) - Template varijabli
+   ✓ VERCEL_SETUP.md (NOVI) - Detaljno uputstvo
+   ✓ DEPLOYMENT_CHECKLIST.md (NOVI) - Kompletna checklist
+   ✓ FINAL_CHECKLIST.md (NOVI) - Brz pregled
+   ✓ QUICK_DEPLOY.sh (NOVI) - Bash script
+   ✓ DEPLOYMENT_SUMMARY.txt (OVI FAJL)
+
+════════════════════════════════════════════════════════════════════════════════
+🔴 ENVIRONMENT VARIJABLE - KOJE TREBALO DA POSTAVIŠ U VERCEL UI
+════════════════════════════════════════════════════════════════════════════════
+
+OBAVEZNE (NOVO!):
+────────────────
+DATABASE_URL
+  Lokalna:     postgresql://postgres:postgres@localhost:5432/mvp_usluge?schema=public
+  Production:  postgresql://user:pass@host.neon.tech:5432/db?schema=public
+  👉 ZAMENI sa production bazom!
+
+NEXTAUTH_SECRET
+  Lokalna:     626uXSWiVMl2//XA8nTG1VkwjzIUKL3LsJHPKjj2y1w=
+  Production:  node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+  👉 GENERIŠI NOVO!
+
+NEXTAUTH_URL
+  Lokalna:     http://localhost:3000
+  Production:  https://tvoj-domen.com
+  👉 ZAMENI sa production domenomu!
+
+────────────────
+
+OSTALE (POGLEDAJ DA LI TREBALO):
+────────────────
+RESEND_API_KEY = re_3gzpGdh9_LTerpCCXcXNB2YLA5PzzvjnW (ili production key)
+RESEND_FROM_EMAIL = MVP Usluge <onboarding@resend.dev> (ili tvoj email)
+CRON_SECRET = dev-cron-secret-12345 (može biti ista)
+UPSTASH_REDIS_REST_URL = https://decent-pangolin-30420.upstash.io (ako koristiš)
+UPSTASH_REDIS_REST_TOKEN = AXbUAAIncDIxM2NmMWNlZmFlNWM0NGEwOTYzNDU3OWU0NTkzMGI5OHAyMzA0MjA (ako koristiš)
+NODE_ENV = production (standard)
+
+════════════════════════════════════════════════════════════════════════════════
+🎯 5 GLAVNIH KORAKA (Korak po Korak)
+════════════════════════════════════════════════════════════════════════════════
+
+KORAK 1: PRIPREMI PRODUCTION BAZU (10 min)
+───────────────────────────────────────────
+☐ Idi na https://neon.tech (BEST opcija)
+☐ Kreiraj novi projekat
+☐ Kopiraj connection string
+☐ Primer: postgresql://user:password@host.neon.tech:5432/mvp_usluge?schema=public
+
+KORAK 2: GENERIŠI NEXTAUTH_SECRET (1 min)
+──────────────────────────────────────────
+☐ Otvori terminal
+☐ Pokreni: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+☐ Kopiraj rezultat (32 karaktera)
+
+KORAK 3: POKRENI MIGRACIJE SA LOKALA (5 min)
+─────────────────────────────────────────────
+☐ Iz direktorijuma mvp-usluge pokreni:
+
+    DATABASE_URL="postgresql://..." npx prisma migrate deploy
+
+☐ Trebalo bi da vidiš:
+    ✅ 1 migration applied
+    ✅ 2 migrations applied
+    ... (5 ukupno)
+
+☐ (OPCIONO) Pokreni seed ako želiš test podatke:
+
+    DATABASE_URL="postgresql://..." npm run db:seed
+
+KORAK 4: GIT COMMIT I PUSH (5 min)
+──────────────────────────────────
+☐ git status (trebalo bi da vidim 7 novih fajlova)
+☐ git add .
+☐ git commit -m "Configure Vercel production deployment with migration cron"
+☐ git push
+
+KORAK 5: VERCEL ENVIRONMENT VARIABLES (15 min)
+───────────────────────────────────────────────
+☐ Idi na https://vercel.com/dashboard
+☐ Klikni na mvp-usluge projekat
+☐ Settings → Environment Variables
+☐ Dodaj sve varijable (vidiš gore)
+☐ Trebalo bi: [protected] ikonice
+
+════════════════════════════════════════════════════════════════════════════════
+📊 ŠTA SE AUTOMATSKI DEŠAVA NA VERCEL-u
+════════════════════════════════════════════════════════════════════════════════
+
+DEPLOYMENT (Instant):
+  ✅ npx prisma generate (bez baze)
+  ✅ next build (bez baze)
+  ✅ Upload na serverless platformu
+
+MIGRACIJE (04:00 UTC svaki dan):
+  ✅ Cron job /api/cron/run-migrations
+  ✅ Automatski primenjuje sve pending migracije
+  ✅ Zaštićeno sa CRON_SECRET
+
+EMAIL (Svaki booking):
+  ✅ Resend API slanja podsetnike
+  ✅ Production key za dostavu
+
+CACHE (Real-time):
+  ✅ Upstash Redis za performance
+
+════════════════════════════════════════════════════════════════════════════════
+✅ FINAL CHECKLIST
+════════════════════════════════════════════════════════════════════════════════
+
+LOKALNO:
+☐ Production baza je sprema (Neon/Supabase)
+☐ DATABASE_URL je testiranI sa migracijama
+☐ Seed je (opciono) pokrenut
+☐ NEXTAUTH_SECRET je generiš
+☐ Svi fajlovi su commitovani
+☐ Git push je uradjen
+
+VERCEL UI:
+☐ Svih 8 environment varijabli je postavljeno
+☐ Sve su [protected]
+☐ DATABASE_URL je production URL
+
+NAKON DEPLOYMENTA:
+☐ Aplikacija je live
+☐ Login je testiran
+☐ Cron logs su vidljivi
+
+════════════════════════════════════════════════════════════════════════════════
+🔐 VAŽNA NAPOMENA - NIKADA NE COMMITUJ OVE STVARI!
+════════════════════════════════════════════════════════════════════════════════
+
+❌ .env fajl sa production vrednostima
+❌ API ključeve
+❌ Database credentials
+❌ NEXTAUTH_SECRET
+
+✅ UMESTO TOGA - koristi Vercel UI za sve sekrete
+
+════════════════════════════════════════════════════════════════════════════════
+🎓 DOKUMENTACIJA
+════════════════════════════════════════════════════════════════════════════════
+
+Za detaljne instruksije:
+  📖 FINAL_CHECKLIST.md      ← Brz pregled (TLI; DR)
+  📖 VERCEL_SETUP.md          ← Detaljno uputstvo
+  📖 DEPLOYMENT_CHECKLIST.md  ← Kompletna lista koraka
+  📖 QUICK_DEPLOY.sh          ← Bash script (ako koristiš)
+
+════════════════════════════════════════════════════════════════════════════════
+🚀 SAŽETAK - OD KRAJA DO KRAJA
+════════════════════════════════════════════════════════════════════════════════
+
+1. Production baza (Neon) ...................... ⏳ 10 min
+2. Generiši NEXTAUTH_SECRET .................... ⏳ 1 min
+3. Migracije sa lokala ......................... ⏳ 5 min
+4. Seed sa lokala (opciono) .................... ⏳ 2 min
+5. Git commit & push ........................... ⏳ 5 min
+6. Vercel environment varijable ................ ⏳ 15 min
+                                               ──────────
+UKUPNO: ~40 minuta (ili manje ako preskoči seed)
+
+Aplikacija je tada LIVE sa:
+✅ Production PostgreSQL
+✅ Automatske migracije (04:00 daily)
+✅ Email slanje
+✅ Redis cache
+✅ Zero downtime deployment
+
+════════════════════════════════════════════════════════════════════════════════
+🎉 SRETNO NA PRODUKCIJI! 🚀
+════════════════════════════════════════════════════════════════════════════════

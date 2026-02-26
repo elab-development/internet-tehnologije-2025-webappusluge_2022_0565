@@ -14,7 +14,7 @@
         },
         {
             "path": "/api/cron/run-migrations",
-            "schedule": "0 */12 * * *"
+            "schedule": "0 4 * * *"
         }
     ]
 }
