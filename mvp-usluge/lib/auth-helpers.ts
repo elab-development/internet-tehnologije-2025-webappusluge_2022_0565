@@ -15,8 +15,15 @@ export async function getCurrentUser() {
 /**
  * Server-side helper za proveru autentifikacije
  * Redirektuje na login ako korisnik nije prijavljen
+ *
+ * NAPOMENA: Na Vercel-u getServerSession() može biti spora zbog cold starts
+ * Dodaj mali delay da se session stabilizuje na serveru
  */
 export async function requireAuth() {
+  // Čekaj malo da se session stabilizuje nakon login-a
+  // Ovo je važno na Vercel-u gde getServerSession() može biti spora
+  await new Promise(resolve => setTimeout(resolve, 500));
+
   const user = await getCurrentUser();
 
   if (!user) {

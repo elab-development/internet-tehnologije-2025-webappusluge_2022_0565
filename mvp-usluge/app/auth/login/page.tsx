@@ -94,11 +94,30 @@ export default function LoginPage() {
       }
 
       if (result?.ok) {
-        // Uspešna prijava - redirekcija na dashboard
-        router.push("/dashboard");
+        // ✅ Uspešna prijava - čekaj da se session stabilizuje na serveru
+        // Ovo je KRITIČNO na Vercel-u gde je getServerSession() spora
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
+        // Prvo osvežи stranicu da učita nove cookies iz server session-a
         router.refresh();
+
+        // Čekaj da se refresh završi i session bude dostupan
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        // Zatim redirektuj na dashboard
+        // Sada će getServerSession() imati dostupan token
+        router.push("/dashboard");
+
+        // Nikad se ne dostiže kod ispod
+        return;
       }
+
+      // Ako ovde stignes, znači da nema error-a niti ok rezultata
+      // To je retko, ali dodaj fallback
+      setError("Neuspešna prijava - pokušajte ponovo");
+      setIsLoading(false);
     } catch (err) {
+      console.error("Login error:", err);
       setError("Došlo je do greške. Pokušajte ponovo.");
       setIsLoading(false);
     }
