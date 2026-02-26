@@ -72,8 +72,13 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const resolvedParams = await params;
+    const serviceId = resolvedParams.id;
+
+    console.log(`[GET /api/services/${serviceId}] Fetching service...`);
+
     const service = await prisma.service.findUnique({
-      where: { id: (await params).id },
+      where: { id: serviceId },
       include: {
         provider: {
           select: {
@@ -112,11 +117,14 @@ export async function GET(
     });
 
     if (!service) {
+      console.warn(`[GET /api/services/${serviceId}] Service not found`);
       return errorResponse("Usluga nije pronađena", 404);
     }
 
+    console.log(`[GET /api/services/${serviceId}] Service found successfully`);
     return successResponse(service);
   } catch (error) {
+    console.error(`[GET /api/services] Error:`, error instanceof Error ? error.message : String(error));
     return handleApiError(error);
   }
 }
