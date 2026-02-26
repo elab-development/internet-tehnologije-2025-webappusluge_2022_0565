@@ -21,6 +21,11 @@ jest.mock('@/lib/auth-helpers', () => ({
     getCurrentUser: jest.fn(),
 }));
 
+jest.mock('@/lib/rate-limit', () => ({
+    applyRateLimit: jest.fn().mockResolvedValue({ success: true }),
+    apiRateLimit: {},
+}));
+
 import { GET, POST } from '@/app/api/services/route';
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
@@ -43,7 +48,7 @@ describe('/api/services', () => {
             (prisma.service.count as jest.Mock).mockResolvedValue(2);
 
             const request = new NextRequest('http://localhost:3000/api/services?page=1&limit=10');
-            const response = await GET(request);
+            const response = (await GET(request))!;
             const data = await response.json();
 
             expect(response.status).toBe(200);
@@ -108,7 +113,7 @@ describe('/api/services', () => {
                 }),
             });
 
-            const response = await POST(request);
+            const response = (await POST(request))!;
             const data = await response.json();
 
             expect(response.status).toBe(201);
@@ -127,7 +132,7 @@ describe('/api/services', () => {
                 }),
             });
 
-            const response = await POST(request);
+            const response = (await POST(request))!;
             expect(response.status).toBe(401);
         });
 
@@ -145,7 +150,7 @@ describe('/api/services', () => {
                 }),
             });
 
-            const response = await POST(request);
+            const response = (await POST(request))!;
             expect(response.status).toBe(403);
         });
     });

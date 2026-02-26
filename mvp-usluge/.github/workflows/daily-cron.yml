@@ -1,0 +1,22 @@
+name: Daily Cron Jobs
+
+on:
+  schedule:
+    - cron: '0 9 * * *' # Svaki dan u 09:00 UTC
+  workflow_dispatch:
+
+jobs:
+  run-crons:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Reminders
+        run: |
+          curl -X POST https://mvp-usluge.vercel.app/api/cron/send-reminders \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json"
+            
+      - name: Verify Companies
+        run: |
+          curl -X POST https://mvp-usluge.vercel.app/api/cron/verify-companies \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json"

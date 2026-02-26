@@ -10,7 +10,7 @@ export default function HomePage() {
           {/* Badge */}
           <div className="inline-block">
             <span className="px-4 py-2 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
-              🎓 MVP - Internet tehnologije 2026
+              🎓 Internet tehnologije 2026
             </span>
           </div>
 
@@ -158,10 +158,10 @@ export default function HomePage() {
       <footer className="bg-gray-900 text-gray-400 py-12 px-4">
         <div className="max-w-6xl mx-auto text-center">
           <p className="mb-4">
-            © 2024 MVP Usluge - Platforma za oglašavanje uslužnih aktivnosti
+            © 2026 Usluge - Platforma za oglašavanje uslužnih aktivnosti
           </p>
           <p className="text-sm">
-            Projekat razvijen u okviru kursa na Fakultetu tehničkih nauka
+            Projekat razvijen u okviru predmeta Internet tehnologije na Fakultetu organizacionih nauka
           </p>
           <div className="mt-6 flex justify-center gap-6">
             <Link href="/services" className="hover:text-white transition">

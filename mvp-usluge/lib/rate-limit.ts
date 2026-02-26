@@ -45,6 +45,16 @@ export const createRateLimit = redis
     })
     : null;
 
+// Limit za pretragu gosta (F-2)
+export const guestSearchRateLimit = redis
+    ? new Ratelimit({
+        redis,
+        limiter: Ratelimit.fixedWindow(20, '24 h'), // Maksimalno 20 pretraga po danu
+        analytics: true,
+        prefix: 'ratelimit:guestSearch',
+    })
+    : null;
+
 /**
  * Helper funkcija za primenu rate limit-a
  */

@@ -468,3 +468,17 @@ Ručno pokretanje:
 1. Idi na GitHub → Actions
 2. Odaberi "Send Booking Reminders"
 3. Klikni "Run workflow"
+
+---
+
+### ☁️ Deployment na Cloud (Vercel + Neon)
+
+Projekat je automatizovan za deployment na Vercel platformi.
+1. Forkujte/klonirajte repozitorijum.
+2. Na Vercel dashboardu kreirajte novi projekat i izaberite `mvp-usluge` folder.
+3. Postavite sledeće Environment Variables:
+   - `DATABASE_URL` (URL vaše Neon.tech ili Supabase baze)
+   - `NEXTAUTH_SECRET`
+   - `NEXTAUTH_URL` (npr. https://vaš-domen.vercel.app)
+   - `RESEND_API_KEY`
+4. Deploy! `vercel.json` će automatski pokrenuti Prisma migracije pre bildovanja.

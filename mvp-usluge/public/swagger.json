@@ -1,0 +1,1977 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "MVP Usluge API",
+    "version": "1.0.0",
+    "description": "REST API dokumentacija za platformu oglašavanja uslužnih aktivnosti",
+    "contact": {
+      "name": "API Support",
+      "email": "support@mvp-usluge.com"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Development server"
+    },
+    {
+      "url": "https://mvp-usluge.vercel.app",
+      "description": "Production server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "NextAuth.js JWT token"
+      }
+    },
+    "schemas": {
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "CLIENT",
+              "FREELANCER",
+              "COMPANY",
+              "ADMIN"
+            ]
+          },
+          "isVerified": {
+            "type": "boolean"
+          },
+          "averageRating": {
+            "type": "number",
+            "nullable": true
+          },
+          "totalReviews": {
+            "type": "integer"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Service": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "price": {
+            "type": "number"
+          },
+          "pricingType": {
+            "type": "string",
+            "enum": [
+              "FIXED",
+              "HOURLY"
+            ]
+          },
+          "duration": {
+            "type": "integer",
+            "description": "Trajanje u minutima"
+          },
+          "locationType": {
+            "type": "string",
+            "enum": [
+              "ONSITE",
+              "CLIENT_LOCATION",
+              "ONLINE"
+            ]
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "categoryId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "providerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Booking": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "scheduledDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "scheduledTime": {
+            "type": "string",
+            "pattern": "^([01]\\d|2[0-3]):([0-5]\\d)$"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "CONFIRMED",
+              "COMPLETED",
+              "CANCELLED",
+              "REJECTED"
+            ]
+          },
+          "clientNotes": {
+            "type": "string",
+            "nullable": true
+          },
+          "providerNotes": {
+            "type": "string",
+            "nullable": true
+          },
+          "clientId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "providerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "serviceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "workerId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Review": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "rating": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "comment": {
+            "type": "string",
+            "nullable": true
+          },
+          "response": {
+            "type": "string",
+            "nullable": true
+          },
+          "authorId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "targetId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "bookingId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Category": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "iconUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "parentId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Worker": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "nullable": true
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true
+          },
+          "position": {
+            "type": "string"
+          },
+          "specializations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "profileImage": {
+            "type": "string",
+            "nullable": true
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "companyId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "WorkingHours": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "dayOfWeek": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 6
+          },
+          "startTime": {
+            "type": "string",
+            "pattern": "^([01]\\d|2[0-3]):([0-5]\\d)$"
+          },
+          "endTime": {
+            "type": "string",
+            "pattern": "^([01]\\d|2[0-3]):([0-5]\\d)$"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "error": {
+            "type": "string"
+          },
+          "errors": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Auth",
+      "description": "Autentifikacija i registracija"
+    },
+    {
+      "name": "Services",
+      "description": "Upravljanje uslugama"
+    },
+    {
+      "name": "Bookings",
+      "description": "Rezervacije"
+    },
+    {
+      "name": "Reviews",
+      "description": "Ocene i komentari"
+    },
+    {
+      "name": "Categories",
+      "description": "Kategorije usluga"
+    },
+    {
+      "name": "Workers",
+      "description": "Upravljanje radnicima (samo COMPANY)"
+    },
+    {
+      "name": "Profile",
+      "description": "Profil i podaci korisnika"
+    },
+    {
+      "name": "Calendar",
+      "description": "Upravljanje radnim vremenom i dostupnostima"
+    },
+    {
+      "name": "Admin",
+      "description": "Administratorske opcije"
+    },
+    {
+      "name": "Geolocation",
+      "description": "Geolocation servisi"
+    },
+    {
+      "name": "Cron",
+      "description": "Cron job endpoint-i"
+    },
+    {
+      "name": "Documentation",
+      "description": "API dokumentacija"
+    },
+    {
+      "name": "Health",
+      "description": "Health check endpoint"
+    },
+    {
+      "name": "Analytics",
+      "description": "Analitika i statistika"
+    }
+  ],
+  "paths": {
+    "/api/admin/users": {
+      "get": {
+        "summary": "Vraća sve korisnike",
+        "tags": [
+          "Admin"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista korisnika"
+          },
+          "403": {
+            "description": "Samo administratori mogu pristupiti"
+          }
+        }
+      }
+    },
+    "/api/analytics": {
+      "get": {
+        "summary": "Vraća analitiku za trenutnog korisnika",
+        "description": "Statistika rezervacija, prihoda i ocena (za pružaoce i admin-a)",
+        "tags": [
+          "Analytics"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Analitika uspešno vraćena"
+          },
+          "401": {
+            "description": "Neautorizovan pristup"
+          }
+        }
+      }
+    },
+    "/api/auth/check-email": {
+      "get": {
+        "summary": "Proverava dostupnost email adrese",
+        "description": "Javna ruta - vraća da li je email dostupan za registraciju",
+        "tags": [
+          "Auth"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "email",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "email"
+            },
+            "description": "Email adresa za proveru"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Provera uspešna",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "available": {
+                          "type": "boolean"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Email parametar je obavezan"
+          }
+        }
+      }
+    },
+    "/api/auth/forgot-password": {
+      "post": {
+        "summary": "Zahtev za resetovanje lozinke",
+        "description": "Javna ruta - šalje email sa linkom za resetovanje",
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "marko@gmail.com"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Email poslat (ili kažnjava da je poslat čak i ako korisnik ne postoji)"
+          },
+          "400": {
+            "description": "Email je obavezan"
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "summary": "⚠️ Zastarelo - koristi /api/auth/signin",
+        "description": "Ovaj endpoint više NIJE korišćen. Umesto toga koristite NextAuth.js signIn funkciju direktno ili /api/auth/signin endpoint.\n\nPrijavljivanje se obavlja kroz NextAuth.js sa sledećim credentials:\n- email: email korisnika\n- password: lozinka korisnika (heširana sa bcrypt)\n\n**NextAuth.js signIn primer:**\n```javascript\nimport { signIn } from \"next-auth/react\";\n\nawait signIn(\"credentials\", {\n  email: \"user@example.com\",\n  password: \"password123\"\n});\n```\n",
+        "tags": [
+          "Auth"
+        ],
+        "deprecated": true,
+        "responses": {
+          "400": {
+            "description": "Endpoint je zastareo - koristi /api/auth/signin",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "summary": "Registracija novog korisnika",
+        "description": "Kreira novi korisnički nalog sa validacijom podataka",
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email",
+                  "password",
+                  "firstName",
+                  "lastName"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "marko@gmail.com"
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 6,
+                    "example": "marko123"
+                  },
+                  "firstName": {
+                    "type": "string",
+                    "minLength": 2,
+                    "example": "Marko"
+                  },
+                  "lastName": {
+                    "type": "string",
+                    "minLength": 2,
+                    "example": "Marković"
+                  },
+                  "phone": {
+                    "type": "string",
+                    "pattern": "^\\+?[0-9]{9,15}$",
+                    "example": "+381601234567"
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "CLIENT",
+                      "FREELANCER",
+                      "COMPANY"
+                    ],
+                    "default": "CLIENT"
+                  },
+                  "companyName": {
+                    "type": "string",
+                    "description": "Obavezno za COMPANY ulogu"
+                  },
+                  "pib": {
+                    "type": "string",
+                    "pattern": "^[0-9]{9}$",
+                    "description": "Obavezno za COMPANY ulogu"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Nalog uspešno kreiran",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/User"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Email već postoji",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validaciona greška",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/reset-password": {
+      "post": {
+        "summary": "Resetuje lozinku sa validnim tokenom",
+        "description": "Javna ruta - resetuje lozinku korisnika",
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "token",
+                  "newPassword"
+                ],
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "description": "JWT token iz forgot-password email-a"
+                  },
+                  "newPassword": {
+                    "type": "string",
+                    "minLength": 6,
+                    "example": "noveLozinka123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Lozinka uspešno promenjena"
+          },
+          "400": {
+            "description": "Token nevalidan, istekao ili već iskorišćen"
+          },
+          "404": {
+            "description": "Korisnik nije pronađen"
+          }
+        }
+      }
+    },
+    "/api/auth/session": {
+      "get": {
+        "summary": "Vraća podatke trenutne sesije",
+        "description": "Zaštićena ruta - vraća podatke prijavljenog korisnika ili null",
+        "tags": [
+          "Auth"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Korisnik je prijavljen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "user": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "email": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "CLIENT",
+                            "FREELANCER",
+                            "COMPANY",
+                            "ADMIN"
+                          ]
+                        },
+                        "isVerified": {
+                          "type": "boolean"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Korisnik nije prijavljen"
+          }
+        }
+      }
+    },
+    "/api/auth/verify-email": {
+      "post": {
+        "summary": "Verifikuje email adresu",
+        "description": "Javna ruta - aktivira email sa tokenom iz email-a",
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "token"
+                ],
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "description": "JWT token iz register email-a"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Email uspešno verifikovan"
+          },
+          "400": {
+            "description": "Token nevalidan ili istekao"
+          },
+          "404": {
+            "description": "Korisnik nije pronađen"
+          }
+        }
+      }
+    },
+    "/api/bookings": {
+      "get": {
+        "summary": "Vraća rezervacije trenutnog korisnika",
+        "description": "Zaštićena ruta - klijent vidi svoje, pružalac vidi rezervacije za svoje usluge",
+        "tags": [
+          "Bookings"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PENDING",
+                "CONFIRMED",
+                "COMPLETED",
+                "CANCELLED",
+                "REJECTED"
+              ]
+            },
+            "description": "Filter po statusu"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista rezervacija",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "bookings": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Booking"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Neautorizovan pristup"
+          }
+        }
+      }
+    },
+    "/api/calendar/availability": {
+      "get": {
+        "summary": "Vraća dostupne termine za pružaoca",
+        "tags": [
+          "Calendar"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "providerId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "duration",
+            "schema": {
+              "type": "integer",
+              "default": 60
+            }
+          }
+        ]
+      }
+    },
+    "/api/calendar/working-hours": {
+      "get": {
+        "summary": "Vraća radno vreme trenutnog pružaoca",
+        "tags": [
+          "Calendar"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista radnih vremena"
+          }
+        }
+      },
+      "post": {
+        "summary": "Kreira novo radno vreme",
+        "tags": [
+          "Calendar"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "patch": {
+        "summary": "Ažurira postavke kalendara (npr. slotDuration)",
+        "tags": [
+          "Calendar"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/categories": {
+      "get": {
+        "summary": "Vraća sve kategorije sa hijerarhijom",
+        "description": "Javna ruta - vraća sve kategorije i podkategorije",
+        "tags": [
+          "Categories"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "parentId",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Filtriraj po roditeljskoj kategoriji"
+          },
+          {
+            "in": "query",
+            "name": "includeChildren",
+            "schema": {
+              "type": "boolean",
+              "default": true
+            },
+            "description": "Uključi podkategorije"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista kategorija"
+          }
+        }
+      },
+      "post": {
+        "summary": "Kreira novu kategoriju",
+        "description": "Zaštićena ruta - samo ADMIN",
+        "tags": [
+          "Categories"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "slug"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "slug": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "iconUrl": {
+                    "type": "string"
+                  },
+                  "parentId": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Kategorija kreirana"
+          },
+          "401": {
+            "description": "Neautorizovan pristup"
+          },
+          "403": {
+            "description": "Samo administratori mogu kreirati kategorije"
+          },
+          "409": {
+            "description": "Kategorija sa ovim slug-om već postoji"
+          }
+        }
+      }
+    },
+    "/api/cron/run-migrations": {
+      "post": {
+        "summary": "Pokrenuti Prisma migracije na Vercel-u",
+        "description": "Cron job koji se pokreće svakih 12 sati i primenjuje pending migracije",
+        "tags": [
+          "Cron"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Migracije su primenjene uspešno"
+          },
+          "401": {
+            "description": "Unauthorized (zahteva CRON_SECRET)"
+          },
+          "500": {
+            "description": "Greška tokom primene migracija"
+          }
+        }
+      }
+    },
+    "/api/cron/send-reminders": {
+      "post": {
+        "summary": "Šalje podsetnik emailove za rezervacije sutra",
+        "description": "Cron job koji se pokreće svaki dan i šalje podsetnik 24h pre termina",
+        "tags": [
+          "Cron"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Podsetnike poslati uspešno"
+          },
+          "401": {
+            "description": "Unauthorized (zahteva CRON_SECRET)"
+          }
+        }
+      }
+    },
+    "/api/cron/verify-companies": {
+      "get": {
+        "summary": "Proverava i ažurira verifikaciju preduzeća",
+        "description": "Cron job - proverava da li su preduzeća verifikovana",
+        "tags": [
+          "Cron"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Verifikacija obavljena"
+          },
+          "401": {
+            "description": "Unauthorized (zahteva CRON_SECRET)"
+          }
+        }
+      },
+      "post": {
+        "summary": "Proverava i ažurira verifikaciju preduzeća",
+        "description": "Cron job - proverava da li su preduzeća verifikovana",
+        "tags": [
+          "Cron"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Verifikacija obavljena"
+          },
+          "401": {
+            "description": "Unauthorized (zahteva CRON_SECRET)"
+          }
+        }
+      }
+    },
+    "/api/geocode": {
+      "post": {
+        "summary": "Konvertuje adresu u geografske koordinate",
+        "description": "Koristi Nominatim API (OpenStreetMap) za geocoding",
+        "tags": [
+          "Geolocation"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "address"
+                ],
+                "properties": {
+                  "address": {
+                    "type": "string",
+                    "example": "Knez Mihailova 15, Beograd"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Koordinate uspešno dobijene",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "latitude": {
+                          "type": "number",
+                          "example": 44.8176
+                        },
+                        "longitude": {
+                          "type": "number",
+                          "example": 20.4633
+                        },
+                        "displayName": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Adresa nije pronađena"
+          }
+        }
+      }
+    },
+    "/api/health": {
+      "get": {
+        "summary": "Health check endpoint",
+        "description": "Proverava status aplikacije i database konekcije",
+        "tags": [
+          "Health"
+        ],
+        "responses": {
+          "200": {
+            "description": "Aplikacija je zdrava",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "healthy"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "uptime": {
+                      "type": "number",
+                      "description": "Uptime u sekundama"
+                    },
+                    "database": {
+                      "type": "string",
+                      "example": "connected"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Aplikacija nije zdrava",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "unhealthy"
+                    },
+                    "database": {
+                      "type": "string",
+                      "example": "disconnected"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/profile": {
+      "get": {
+        "summary": "Vraća profil trenutnog korisnika",
+        "tags": [
+          "Profile"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Profil uspešno vraćen"
+          },
+          "401": {
+            "description": "Neautorizovan pristup"
+          },
+          "404": {
+            "description": "Korisnik nije pronađen"
+          }
+        }
+      },
+      "put": {
+        "summary": "Ažurira profil korisnika",
+        "tags": [
+          "Profile"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "firstName": {
+                    "type": "string"
+                  },
+                  "lastName": {
+                    "type": "string"
+                  },
+                  "phone": {
+                    "type": "string"
+                  },
+                  "bio": {
+                    "type": "string"
+                  },
+                  "city": {
+                    "type": "string"
+                  },
+                  "address": {
+                    "type": "string"
+                  },
+                  "profileImage": {
+                    "type": "string",
+                    "format": "uri"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Profil uspešno ažuriran"
+          },
+          "401": {
+            "description": "Neautorizovan pristup"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Deaktivira nalog korisnika",
+        "tags": [
+          "Profile"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Nalog uspešno deaktiviran"
+          },
+          "401": {
+            "description": "Neautorizovan pristup"
+          }
+        }
+      }
+    },
+    "/api/reviews": {
+      "get": {
+        "summary": "Vraća listu ocena",
+        "description": "Vraća ocene filtrirane po pružaocu ili uslugama sa statistikom",
+        "tags": [
+          "Reviews"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "targetId",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "ID pružaoca (za prikaz ocena na profilu)",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          {
+            "in": "query",
+            "name": "serviceId",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "ID usluge (za prikaz ocena za uslugu)",
+            "example": "550e8400-e29b-41d4-a716-446655440001"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista ocena sa statistikom",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "reviews": {
+                          "type": "array",
+                          "items": {
+                            "allOf": [
+                              {
+                                "$ref": "#/components/schemas/Review"
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "author": {
+                                    "type": "object",
+                                    "properties": {
+                                      "id": {
+                                        "type": "string"
+                                      },
+                                      "firstName": {
+                                        "type": "string"
+                                      },
+                                      "lastName": {
+                                        "type": "string"
+                                      }
+                                    }
+                                  },
+                                  "target": {
+                                    "type": "object",
+                                    "properties": {
+                                      "id": {
+                                        "type": "string"
+                                      },
+                                      "firstName": {
+                                        "type": "string"
+                                      },
+                                      "lastName": {
+                                        "type": "string"
+                                      },
+                                      "companyName": {
+                                        "type": "string"
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "stats": {
+                          "type": "object",
+                          "properties": {
+                            "total": {
+                              "type": "integer",
+                              "example": 12
+                            },
+                            "averageRating": {
+                              "type": "number",
+                              "format": "double",
+                              "example": 4.5
+                            },
+                            "distribution": {
+                              "type": "object",
+                              "properties": {
+                                "1": {
+                                  "type": "integer",
+                                  "example": 0
+                                },
+                                "2": {
+                                  "type": "integer",
+                                  "example": 0
+                                },
+                                "3": {
+                                  "type": "integer",
+                                  "example": 1
+                                },
+                                "4": {
+                                  "type": "integer",
+                                  "example": 3
+                                },
+                                "5": {
+                                  "type": "integer",
+                                  "example": 8
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Nevaljani parametri"
+          }
+        }
+      },
+      "post": {
+        "summary": "Kreira novu ocenu",
+        "description": "Zaštićena ruta - samo CLIENT može ocenjivati COMPLETED usluge",
+        "tags": [
+          "Reviews"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "bookingId",
+                  "rating"
+                ],
+                "properties": {
+                  "bookingId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "rating": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 5,
+                    "example": 5
+                  },
+                  "comment": {
+                    "type": "string",
+                    "maxLength": 500,
+                    "example": "Odličan servis!"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Ocena uspešno kreirana",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Review"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Rezervacija nije završena ili već postoji ocena"
+          },
+          "401": {
+            "description": "Neautorizovan pristup"
+          },
+          "403": {
+            "description": "Samo klijenti mogu ocenjivati"
+          }
+        }
+      }
+    },
+    "/api/services": {
+      "get": {
+        "summary": "Vraća listu svih aktivnih usluga",
+        "description": "Javna ruta - pretraga i filtriranje usluga sa paginacijom",
+        "tags": [
+          "Services"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "categoryId",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Filter po kategoriji"
+          },
+          {
+            "in": "query",
+            "name": "providerId",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Filter po pružaocu"
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Pretraga po nazivu/opisu"
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            },
+            "description": "Broj stranice"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            },
+            "description": "Broj rezultata po stranici"
+          },
+          {
+            "in": "query",
+            "name": "latitude",
+            "schema": {
+              "type": "number"
+            },
+            "description": "Geografska širina korisnika"
+          },
+          {
+            "in": "query",
+            "name": "longitude",
+            "schema": {
+              "type": "number"
+            },
+            "description": "Geografska dužina korisnika"
+          },
+          {
+            "in": "query",
+            "name": "radius",
+            "schema": {
+              "type": "integer",
+              "default": 50
+            },
+            "description": "Radijus pretrage u kilometrima"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista usluga",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "services": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Service"
+                          }
+                        },
+                        "pagination": {
+                          "type": "object",
+                          "properties": {
+                            "page": {
+                              "type": "integer"
+                            },
+                            "limit": {
+                              "type": "integer"
+                            },
+                            "total": {
+                              "type": "integer"
+                            },
+                            "totalPages": {
+                              "type": "integer"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Kreira novu uslugu",
+        "description": "Zaštićena ruta - samo FREELANCER i COMPANY",
+        "tags": [
+          "Services"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "description",
+                  "price",
+                  "duration",
+                  "categoryId"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 3,
+                    "example": "Muško šišanje"
+                  },
+                  "description": {
+                    "type": "string",
+                    "minLength": 10,
+                    "example": "Profesionalno muško šišanje sa stilizovanjem"
+                  },
+                  "price": {
+                    "type": "number",
+                    "minimum": 0,
+                    "example": 1500
+                  },
+                  "pricingType": {
+                    "type": "string",
+                    "enum": [
+                      "FIXED",
+                      "HOURLY"
+                    ],
+                    "default": "FIXED"
+                  },
+                  "duration": {
+                    "type": "integer",
+                    "minimum": 15,
+                    "maximum": 480,
+                    "example": 45
+                  },
+                  "locationType": {
+                    "type": "string",
+                    "enum": [
+                      "ONSITE",
+                      "CLIENT_LOCATION",
+                      "ONLINE"
+                    ],
+                    "default": "ONSITE"
+                  },
+                  "categoryId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "images": {
+                    "type": "array",
+                    "maxItems": 3,
+                    "items": {
+                      "type": "string",
+                      "format": "uri"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Usluga uspešno kreirana",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Service"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Neautorizovan pristup"
+          },
+          "403": {
+            "description": "Nedovoljna prava pristupa"
+          }
+        }
+      }
+    },
+    "/api/workers/bookings": {
+      "get": {
+        "summary": "Vraća sve zakazane termine za radnike preduzeća",
+        "tags": [
+          "Workers"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista zakazanih termina za sve radnike"
+          },
+          "401": {
+            "description": "Neautorizovan pristup"
+          },
+          "403": {
+            "description": "Samo preduzeća mogu pristupiti"
+          }
+        }
+      }
+    },
+    "/api/workers": {
+      "get": {
+        "summary": "Vraća listu radnika preduzeća",
+        "tags": [
+          "Workers"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "isActive",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista radnika"
+          }
+        }
+      },
+      "post": {
+        "summary": "Kreira novog radnika u preduzeću",
+        "description": "Zaštićena ruta - samo COMPANY korisnici mogu dodavati radnike. Maksimalno 100 radnika po preduzeću.",
+        "tags": [
+          "Workers"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "firstName",
+                  "lastName",
+                  "position"
+                ],
+                "properties": {
+                  "firstName": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 50,
+                    "example": "Milan"
+                  },
+                  "lastName": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 50,
+                    "example": "Milanović"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "nullable": true,
+                    "example": "milan@company.com"
+                  },
+                  "phone": {
+                    "type": "string",
+                    "pattern": "^\\+?[0-9]{9,15}$",
+                    "nullable": true,
+                    "example": "+381601234567"
+                  },
+                  "position": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 100,
+                    "example": "Senior Frizer"
+                  },
+                  "specializations": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "example": [
+                      "Muško šišanje",
+                      "Farbanje",
+                      "Tretmani"
+                    ]
+                  },
+                  "profileImage": {
+                    "type": "string",
+                    "format": "uri",
+                    "nullable": true,
+                    "example": "https://example.com/worker.jpg"
+                  },
+                  "isActive": {
+                    "type": "boolean",
+                    "default": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Radnik uspešno kreiran",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Worker"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Nevaljani podaci ili dostignut maksimalan broj radnika"
+          },
+          "401": {
+            "description": "Neautorizovan pristup"
+          },
+          "403": {
+            "description": "Samo preduzeća mogu dodavati radnike"
+          },
+          "409": {
+            "description": "Radnik sa ovim email-om već postoji"
+          }
+        }
+      }
+    }
+  }
+}

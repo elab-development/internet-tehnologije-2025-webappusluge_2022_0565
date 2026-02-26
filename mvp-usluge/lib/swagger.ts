@@ -1,4 +1,6 @@
 import swaggerJsdoc from 'swagger-jsdoc';
+import fs from 'fs';
+import path from 'path';
 
 const options: swaggerJsdoc.Options = {
     definition: {
@@ -116,6 +118,33 @@ const options: swaggerJsdoc.Options = {
                         createdAt: { type: 'string', format: 'date-time' },
                     },
                 },
+                Worker: {
+                    type: 'object',
+                    properties: {
+                        id: { type: 'string', format: 'uuid' },
+                        firstName: { type: 'string' },
+                        lastName: { type: 'string' },
+                        email: { type: 'string', format: 'email', nullable: true },
+                        phone: { type: 'string', nullable: true },
+                        position: { type: 'string' },
+                        specializations: { type: 'array', items: { type: 'string' } },
+                        profileImage: { type: 'string', nullable: true },
+                        isActive: { type: 'boolean' },
+                        companyId: { type: 'string', format: 'uuid' },
+                        createdAt: { type: 'string', format: 'date-time' },
+                    },
+                },
+                WorkingHours: {
+                    type: 'object',
+                    properties: {
+                        id: { type: 'string', format: 'uuid' },
+                        dayOfWeek: { type: 'integer', minimum: 0, maximum: 6 },
+                        startTime: { type: 'string', pattern: '^([01]\\d|2[0-3]):([0-5]\\d)$' },
+                        endTime: { type: 'string', pattern: '^([01]\\d|2[0-3]):([0-5]\\d)$' },
+                        isActive: { type: 'boolean' },
+                        userId: { type: 'string', format: 'uuid' },
+                    },
+                },
                 Error: {
                     type: 'object',
                     properties: {
@@ -138,10 +167,49 @@ const options: swaggerJsdoc.Options = {
             { name: 'Bookings', description: 'Rezervacije' },
             { name: 'Reviews', description: 'Ocene i komentari' },
             { name: 'Categories', description: 'Kategorije usluga' },
+            { name: 'Workers', description: 'Upravljanje radnicima (samo COMPANY)' },
+            { name: 'Profile', description: 'Profil i podaci korisnika' },
+            { name: 'Calendar', description: 'Upravljanje radnim vremenom i dostupnostima' },
+            { name: 'Admin', description: 'Administratorske opcije' },
+            { name: 'Geolocation', description: 'Geolocation servisi' },
+            { name: 'Cron', description: 'Cron job endpoint-i' },
+            { name: 'Documentation', description: 'API dokumentacija' },
             { name: 'Health', description: 'Health check endpoint' },
+            { name: 'Analytics', description: 'Analitika i statistika' },
         ],
     },
-    apis: ['./app/api/**/*.ts'], // Putanja do API ruta sa JSDoc komentarima
 };
 
-export const swaggerSpec = swaggerJsdoc(options);
+function getApiFiles(dir: string, fileList: string[] = []): string[] {
+    const files = fs.readdirSync(dir);
+    for (const file of files) {
+        const filePath = path.join(dir, file);
+        if (fs.statSync(filePath).isDirectory()) {
+            getApiFiles(filePath, fileList);
+        } else if (file.endsWith('.ts') || file.endsWith('.js')) {
+            fileList.push(filePath.replace(/\\/g, '/'));
+        }
+    }
+    return fileList;
+}
+
+export const getSwaggerSpec = () => {
+    let apiFiles: string[] = [];
+    try {
+        const apiDir = path.join(process.cwd(), 'app', 'api');
+        apiFiles = getApiFiles(apiDir);
+        console.log("Swagger extracted file count: " + apiFiles.length);
+        if (apiFiles.length > 0) {
+            console.log("Example file: " + apiFiles[0]);
+        }
+    } catch (error) {
+        console.error('Error reading API directories for Swagger:', error);
+    }
+
+    return swaggerJsdoc({
+        ...options,
+        apis: apiFiles,
+    });
+};
+
+export const swaggerSpec = getSwaggerSpec();

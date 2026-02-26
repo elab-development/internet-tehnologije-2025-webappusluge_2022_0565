@@ -5,12 +5,33 @@ import { getCurrentUser } from '@/lib/auth-helpers';
 import { validateUUID } from '@/lib/sanitize';
 
 /**
- * DELETE /api/calendar/working-hours/[id]
- * Briše radno vreme
+ * @swagger
+ * /api/calendar/working-hours/{id}:
+ *   delete:
+ *     summary: Briše radno vreme
+ *     tags: [Calendar]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Radno vreme obrisano
+ *       401:
+ *         description: Neautorizovan pristup
+ *       403:
+ *         description: Nemate dozvolu
+ *       404:
+ *         description: Radno vreme nije pronađeno
  */
 export async function DELETE(
     req: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const user = await getCurrentUser();
@@ -19,12 +40,12 @@ export async function DELETE(
             return errorResponse('Neautorizovan pristup', 401);
         }
 
-        if (!validateUUID(params.id)) {
+        if (!validateUUID((await params).id)) {
             return errorResponse('Nevalidan ID format', 400);
         }
 
         const workingHours = await prisma.workingHours.findUnique({
-            where: { id: params.id },
+            where: { id: (await params).id },
         });
 
         if (!workingHours) {
@@ -37,7 +58,7 @@ export async function DELETE(
         }
 
         await prisma.workingHours.delete({
-            where: { id: params.id },
+            where: { id: (await params).id },
         });
 
         return successResponse(null, 'Radno vreme obrisano');

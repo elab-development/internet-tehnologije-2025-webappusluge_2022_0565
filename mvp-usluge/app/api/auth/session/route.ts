@@ -2,8 +2,40 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth-helpers";
 
 /**
- * GET /api/auth/session
- * Vraća trenutnog korisnika ili null
+ * @swagger
+ * /api/auth/session:
+ *   get:
+ *     summary: Vraća podatke trenutne sesije
+ *     description: Zaštićena ruta - vraća podatke prijavljenog korisnika ili null
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Korisnik je prijavljen
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 user:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                     email:
+ *                       type: string
+ *                     name:
+ *                       type: string
+ *                     role:
+ *                       type: string
+ *                       enum: [CLIENT, FREELANCER, COMPANY, ADMIN]
+ *                     isVerified:
+ *                       type: boolean
+ *       401:
+ *         description: Korisnik nije prijavljen
  */
 export async function GET() {
   try {

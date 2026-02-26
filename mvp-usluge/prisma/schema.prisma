@@ -67,9 +67,16 @@ model User {
   
   // Verifikacija i status
   isVerified    Boolean  @default(false)
-  isActive      Boolean  @default(true)
+  isActive      Boolean   @default(true)
   emailVerified DateTime?
   verifiedAt    DateTime? // NOVA KOLONA zarad migracije - datum kada je preduzeće verifikovano
+  
+  // Strike sistem i banovi
+  strikes       Int       @default(0)
+  bannedUntil   DateTime?
+
+  // Postavke kalendara
+  slotDuration  Int       @default(30) // U minutima (15, 30, 45, 60)
 
   
   // Rejting (automatski izračunava iz Review-a)

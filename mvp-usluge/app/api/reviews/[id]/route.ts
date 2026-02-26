@@ -8,21 +8,78 @@ import { UserRole } from "@prisma/client";
 import { validateUUID, sanitizeText } from '@/lib/sanitize';
 
 /**
- * GET /api/reviews/[id]
- * Vraća detalje jedne ocene
+ * @swagger
+ * /api/reviews/{id}:
+ *   get:
+ *     summary: Vraća detalje jedne ocene
+ *     tags: [Reviews]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Detalji ocene
+ *       404:
+ *         description: Ocena nije pronađena
+ *   patch:
+ *     summary: Ažurira ocenu ili dodaje odgovor
+ *     tags: [Reviews]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Ocena ažurirana
+ *       401:
+ *         description: Neautorizovan pristup
+ *       403:
+ *         description: Nemate dozvolu
+ *       404:
+ *         description: Ocena nije pronađena
+ *   delete:
+ *     summary: Briše ocenu
+ *     tags: [Reviews]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Ocena obrisana
+ *       401:
+ *         description: Neautorizovan pristup
+ *       403:
+ *         description: Nemate dozvolu
+ *       404:
+ *         description: Ocena nije pronađena
  */
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // 🛡 VALIDACIJA UUID
-    if (!validateUUID(params.id)) {
+    if (!validateUUID((await params).id)) {
       return errorResponse("Nevalidan ID format", 400);
     }
 
     const review = await prisma.review.findUnique({
-      where: { id: params.id },
+      where: { id: (await params).id },
       include: {
         author: {
           select: {
@@ -73,7 +130,7 @@ export async function GET(
  */
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getCurrentUser();
@@ -83,13 +140,13 @@ export async function PATCH(
     }
 
     // 🛡 VALIDACIJA UUID
-    if (!validateUUID(params.id)) {
+    if (!validateUUID((await params).id)) {
       return errorResponse("Nevalidan ID format", 400);
     }
 
     // Pronađi ocenu
     const existingReview = await prisma.review.findUnique({
-      where: { id: params.id },
+      where: { id: (await params).id },
     });
 
     if (!existingReview) {
@@ -106,7 +163,7 @@ export async function PATCH(
     if (isResponse) {
       // ODGOVOR PRUŽAOCA
       if (!isTarget && user.role !== UserRole.ADMIN) {
-        console.warn(`IDOR attempt: User ${user.id} tried to respond to review ${params.id}`);
+        console.warn(`IDOR attempt: User ${user.id} tried to respond to review ${(await params).id}`);
         return errorResponse(
           "Samo pružalac može odgovoriti na ocenu",
           403
@@ -122,7 +179,7 @@ export async function PATCH(
       const validatedData = respondToReviewSchema.parse(sanitizedBody);
 
       const updatedReview = await prisma.review.update({
-        where: { id: params.id },
+        where: { id: (await params).id },
         data: {
           response: validatedData.response,
         },
@@ -146,7 +203,7 @@ export async function PATCH(
     } else {
       // IZMENA OCENE (KLIJENT)
       if (!isAuthor && user.role !== UserRole.ADMIN) {
-        console.warn(`IDOR attempt: User ${user.id} tried to modify review ${params.id}`);
+        console.warn(`IDOR attempt: User ${user.id} tried to modify review ${(await params).id}`);
         return errorResponse(
           "Možete izmeniti samo svoje ocene",
           403
@@ -163,10 +220,11 @@ export async function PATCH(
       // Proveri da li je prošlo više od 7 dana
       const createdAt = new Date(existingReview.createdAt);
       const now = new Date();
-      const daysSinceCreation =
-        (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
+      const hoursSinceCreation =
+        (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
+      const EDIT_WINDOW_HOURS = 7 * 24; // 7 dana
 
-      if (daysSinceCreation > 7) {
+      if (hoursSinceCreation > EDIT_WINDOW_HOURS) {
         return errorResponse(
           "Ocene se mogu menjati samo u roku od 7 dana",
           400
@@ -175,7 +233,7 @@ export async function PATCH(
 
 
       const updatedReview = await prisma.review.update({
-        where: { id: params.id },
+        where: { id: (await params).id },
         data: {
           rating: validatedData.rating,
           comment: validatedData.comment,
@@ -210,7 +268,7 @@ export async function PATCH(
  */
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getCurrentUser();
@@ -220,12 +278,12 @@ export async function DELETE(
     }
 
     // 🛡 VALIDACIJA UUID
-    if (!validateUUID(params.id)) {
+    if (!validateUUID((await params).id)) {
       return errorResponse("Nevalidan ID format", 400);
     }
 
     const review = await prisma.review.findUnique({
-      where: { id: params.id },
+      where: { id: (await params).id },
       include: {
         target: {
           select: {
@@ -241,27 +299,28 @@ export async function DELETE(
 
     // Samo autor ili admin mogu obrisati
     if (review.authorId !== user.id && user.role !== UserRole.ADMIN) {
-      console.warn(`IDOR attempt: User ${user.id} tried to delete review ${params.id}`);
+      console.warn(`IDOR attempt: User ${user.id} tried to delete review ${(await params).id}`);
       return errorResponse("Nemate dozvolu da obrišete ovu ocenu", 403);
     }
 
-    // Autor može obrisati samo u roku od 24h
+    // Autor može obrisati samo u roku od 7 dana
     if (review.authorId === user.id && user.role !== UserRole.ADMIN) {
       const createdAt = new Date(review.createdAt);
       const now = new Date();
       const hoursSinceCreation =
         (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
+      const DELETE_WINDOW_HOURS = 7 * 24; // 7 dana
 
-      if (hoursSinceCreation > 24) {
+      if (hoursSinceCreation > DELETE_WINDOW_HOURS) {
         return errorResponse(
-          "Ocene se mogu brisati samo u roku od 24h",
+          "Ocene se mogu brisati samo u roku od 7 dana",
           400
         );
       }
     }
 
     await prisma.review.delete({
-      where: { id: params.id },
+      where: { id: (await params).id },
     });
 
     // Ažuriraj prosečnu ocenu

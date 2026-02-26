@@ -52,7 +52,16 @@ export async function GET(req: NextRequest) {
             slots: workingHours.filter((wh: any) => wh.dayOfWeek === i),
         }));
 
-        return successResponse({ workingHours: groupedByDay });
+        // Dohvati slotDuration korisnika
+        const dbUser = await prisma.user.findUnique({
+            where: { id: user.id },
+            select: { slotDuration: true },
+        });
+
+        return successResponse({
+            workingHours: groupedByDay,
+            slotDuration: dbUser?.slotDuration || 30
+        });
     } catch (error) {
         return handleApiError(error);
     }
@@ -110,6 +119,43 @@ export async function POST(req: NextRequest) {
         });
 
         return successResponse(workingHours, 'Radno vreme uspešno dodato', 201);
+    } catch (error) {
+        return handleApiError(error);
+    }
+}
+
+/**
+ * @swagger
+ * /api/calendar/working-hours:
+ *   patch:
+ *     summary: Ažurira postavke kalendara (npr. slotDuration)
+ *     tags: [Calendar]
+ *     security:
+ *       - bearerAuth: []
+ */
+export async function PATCH(req: NextRequest) {
+    try {
+        const user = await getCurrentUser();
+
+        if (!user) {
+            return errorResponse('Neautorizovan pristup', 401);
+        }
+
+        if (user.role !== UserRole.FREELANCER && user.role !== UserRole.COMPANY) {
+            return errorResponse('Nemate dozvolu', 403);
+        }
+
+        const body = await req.json();
+
+        if (body.slotDuration && [15, 30, 45, 60, 90, 120].includes(body.slotDuration)) {
+            await prisma.user.update({
+                where: { id: user.id },
+                data: { slotDuration: body.slotDuration },
+            });
+            return successResponse(null, "Trajanje termina uspešno ažurirano");
+        }
+
+        return errorResponse("Nevalidno trajanje termina", 400);
     } catch (error) {
         return handleApiError(error);
     }

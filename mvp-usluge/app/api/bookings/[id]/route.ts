@@ -10,14 +10,93 @@ import { format } from 'date-fns';
 import { sr } from 'date-fns/locale';
 
 /**
- * GET /api/bookings/[id]
- * Vraća detalje jedne rezervacije
+ * @swagger
+ * /api/bookings/{id}:
+ *   get:
+ *     summary: Vraća detalje jedne rezervacije
+ *     tags: [Bookings]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Detalji rezervacije
+ *       401:
+ *         description: Neautorizovan pristup
+ *       403:
+ *         description: Nemate pristup ovoj rezervaciji
+ *       404:
+ *         description: Rezervacija nije pronađena
+ *   patch:
+ *     summary: Menja status rezervacije
+ *     tags: [Bookings]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [PENDING, CONFIRMED, COMPLETED, CANCELLED, REJECTED]
+ *               providerNotes:
+ *                 type: string
+ *               workerId:
+ *                 type: string
+ *                 format: uuid
+ *     responses:
+ *       200:
+ *         description: Status promenjen
+ *       401:
+ *         description: Neautorizovan pristup
+ *       403:
+ *         description: Nemate dozvolu
+ *       404:
+ *         description: Rezervacija nije pronađena
+ *   delete:
+ *     summary: Briše rezervaciju
+ *     tags: [Bookings]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Rezervacija obrisana
+ *       401:
+ *         description: Neautorizovan pristup
+ *       403:
+ *         description: Nemate dozvolu
+ *       404:
+ *         description: Rezervacija nije pronađena
  */
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const user = await getCurrentUser();
 
     if (!user) {
@@ -25,12 +104,12 @@ export async function GET(
     }
 
     // 🛡 VALIDACIJA UUID
-    if (!validateUUID(params.id)) {
+    if (!validateUUID(id)) {
       return errorResponse("Nevalidan ID format", 400);
     }
 
     const booking = await prisma.booking.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         service: {
           select: {
@@ -94,7 +173,7 @@ export async function GET(
       booking.providerId !== user.id &&
       user.role !== UserRole.ADMIN
     ) {
-      console.warn(`IDOR attempt: User ${user.id} tried to access booking ${params.id}`);
+      console.warn(`IDOR attempt: User ${user.id} tried to access booking ${id}`);
       return errorResponse("Nemate pristup ovoj rezervaciji", 403);
     }
 
@@ -112,9 +191,10 @@ export async function GET(
  */
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const user = await getCurrentUser();
 
     if (!user) {
@@ -122,13 +202,13 @@ export async function PATCH(
     }
 
     // 🛡 VALIDACIJA UUID
-    if (!validateUUID(params.id)) {
+    if (!validateUUID(id)) {
       return errorResponse("Nevalidan ID format", 400);
     }
 
     // Pronađi rezervaciju
     const existingBooking = await prisma.booking.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         service: true,
       },
@@ -147,7 +227,7 @@ export async function PATCH(
     const isClient = existingBooking.clientId === user.id;
 
     if (!isProvider && !isClient && user.role !== UserRole.ADMIN) {
-      console.warn(`IDOR attempt: User ${user.id} tried to modify booking ${params.id}`);
+      console.warn(`IDOR attempt: User ${user.id} tried to modify booking ${id}`);
       return errorResponse("Nemate pristup ovoj rezervaciji", 403);
     }
 
@@ -176,14 +256,27 @@ export async function PATCH(
           (scheduledDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
 
         if (hoursUntilBooking < 24) {
-          return errorResponse(
-            "Rezervaciju možete otkazati najmanje 24h pre zakazanog termina",
-            400
-          );
-        }
+          // Strike sistem
+          const updatedUser = await prisma.user.update({
+            where: { id: user.id },
+            data: { strikes: { increment: 1 } },
+            select: { strikes: true }
+          });
 
-        // Evidentiraj otkazivanje (za statistiku)
-        // TODO: Implementirati sistem upozorenja (3 otkazivanja = suspenzija)
+          if (updatedUser.strikes >= 3) {
+            const banDate = new Date();
+            banDate.setDate(banDate.getDate() + 7);
+
+            await prisma.user.update({
+              where: { id: user.id },
+              data: {
+                bannedUntil: banDate,
+                strikes: 0 // Resetuj strike-ove nakom ban-a
+              }
+            });
+            console.log(`Korisnik ${user.id} suspendovan na 7 dana zbog 3 kasna otkazivanja.`);
+          }
+        }
       }
     }
 
@@ -209,12 +302,18 @@ export async function PATCH(
     }
 
     // Ažuriraj rezervaciju
+    const dataToUpdate: any = {
+      status: validatedData.status,
+      providerNotes: validatedData.providerNotes,
+    };
+
+    if (validatedData.workerId !== undefined) {
+      dataToUpdate.workerId = validatedData.workerId;
+    }
+
     const updatedBooking = await prisma.booking.update({
-      where: { id: params.id },
-      data: {
-        status: validatedData.status,
-        providerNotes: validatedData.providerNotes,
-      },
+      where: { id },
+      data: dataToUpdate,
       include: {
         service: {
           select: {
@@ -309,9 +408,10 @@ export async function PATCH(
  */
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const user = await getCurrentUser();
 
     if (!user) {
@@ -319,12 +419,12 @@ export async function DELETE(
     }
 
     // 🛡 VALIDACIJA UUID
-    if (!validateUUID(params.id)) {
+    if (!validateUUID(id)) {
       return errorResponse("Nevalidan ID format", 400);
     }
 
     const booking = await prisma.booking.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!booking) {
@@ -337,7 +437,7 @@ export async function DELETE(
     }
 
     // Može se obrisati samo ako je CANCELLED ili REJECTED
-    if (!([BookingStatus.CANCELLED, BookingStatus.REJECTED] as BookingStatus[]).includes(booking.status)) {
+    if (booking.status !== "CANCELLED" && booking.status !== "REJECTED") {
       return errorResponse(
         "Možete obrisati samo otkazane ili odbijene rezervacije",
         400
@@ -345,7 +445,7 @@ export async function DELETE(
     }
 
     await prisma.booking.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     return successResponse(null, "Rezervacija je obrisana");

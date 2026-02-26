@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, FormEvent } from "react";
-import { signIn } from "next-auth/react";
+import { useState, FormEvent, useEffect } from "react";
+import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
@@ -27,11 +27,24 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   // ============================================
   // HOOKS
   // ============================================
   const router = useRouter();
+  const { data: session } = useSession();
+
+  // ============================================
+  // EFFECT - Čekaj da se session učita nakon logovanja
+  // ============================================
+  useEffect(() => {
+    if (isRedirecting && session?.user) {
+      // Session je učitan, sada je bezbedno ići na dashboard
+      console.log("Session loaded, redirecting to dashboard...", session.user);
+      window.location.href = "/dashboard";
+    }
+  }, [session, isRedirecting]);
 
   // ============================================
   // CLIENT-SIDE VALIDACIJA
@@ -94,11 +107,22 @@ export default function LoginPage() {
       }
 
       if (result?.ok) {
-        // Uspešna prijava - redirekcija na dashboard
-        router.push("/dashboard");
-        router.refresh();
+        // ✅ Uspešna prijava - signalni setuj isRedirecting flag
+        // useEffect će čekati da se session učita i onda će prebaciti na dashboard
+        console.log("Login successful, waiting for session to be available...");
+        setIsRedirecting(true);
+        setIsLoading(false);
+
+        // Nikad se ne dostiže kod ispod
+        return;
       }
+
+      // Ako ovde stignes, znači da nema error-a niti ok rezultata
+      // To je retko, ali dodaj fallback
+      setError("Neuspešna prijava - pokušajte ponovo");
+      setIsLoading(false);
     } catch (err) {
+      console.error("Login error:", err);
       setError("Došlo je do greške. Pokušajte ponovo.");
       setIsLoading(false);
     }

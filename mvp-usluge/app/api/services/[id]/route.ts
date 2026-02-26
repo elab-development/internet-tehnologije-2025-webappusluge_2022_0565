@@ -7,16 +7,78 @@ import { UserRole } from "@prisma/client";
 import { validateUUID } from '@/lib/sanitize';
 
 /**
- * GET /api/services/[id]
- * Javna ruta - vraća detalje jedne usluge
+ * @swagger
+ * /api/services/{id}:
+ *   get:
+ *     summary: Vraća detalje jedne usluge
+ *     tags: [Services]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Detalji usluge
+ *       404:
+ *         description: Usluga nije pronađena
+ *   put:
+ *     summary: Ažurira uslugu
+ *     tags: [Services]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Usluga ažurirana
+ *       401:
+ *         description: Neautorizovan pristup
+ *       403:
+ *         description: Nemate dozvolu
+ *       404:
+ *         description: Usluga nije pronađena
+ *   delete:
+ *     summary: Briše uslugu
+ *     tags: [Services]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Usluga obrisana
+ *       401:
+ *         description: Neautorizovan pristup
+ *       403:
+ *         description: Nemate dozvolu
+ *       404:
+ *         description: Usluga nije pronađena
  */
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const resolvedParams = await params;
+    const serviceId = resolvedParams.id;
+
+    console.log(`[GET /api/services/${serviceId}] Fetching service...`);
+
     const service = await prisma.service.findUnique({
-      where: { id: params.id },
+      where: { id: serviceId },
       include: {
         provider: {
           select: {
@@ -31,6 +93,7 @@ export async function GET(
             address: true,
             phone: true,
             bio: true,
+            verifiedAt: true,
           },
         },
         category: {
@@ -54,11 +117,14 @@ export async function GET(
     });
 
     if (!service) {
+      console.warn(`[GET /api/services/${serviceId}] Service not found`);
       return errorResponse("Usluga nije pronađena", 404);
     }
 
+    console.log(`[GET /api/services/${serviceId}] Service found successfully`);
     return successResponse(service);
   } catch (error) {
+    console.error(`[GET /api/services] Error:`, error instanceof Error ? error.message : String(error));
     return handleApiError(error);
   }
 }
@@ -70,7 +136,7 @@ export async function GET(
  */
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getCurrentUser();
@@ -80,13 +146,13 @@ export async function PUT(
     }
 
     // 🛡 VALIDACIJA UUID (SQL Injection zaštita)
-    if (!validateUUID(params.id)) {
+    if (!validateUUID((await params).id)) {
       return errorResponse("Nevalidan ID format", 400);
     }
 
     // Pronađi uslugu
     const existingService = await prisma.service.findUnique({
-      where: { id: params.id },
+      where: { id: (await params).id },
     });
 
     if (!existingService) {
@@ -95,7 +161,7 @@ export async function PUT(
 
     // 🛡 IDOR ZAŠTITA - Proveri vlasništvo
     if (existingService.providerId !== user.id && user.role !== UserRole.ADMIN) {
-      console.warn(`IDOR attempt: User ${user.id} tried to modify service ${params.id} owned by ${existingService.providerId}`);
+      console.warn(`IDOR attempt: User ${user.id} tried to modify service ${(await params).id} owned by ${existingService.providerId}`);
       return errorResponse(
         "Nemate dozvolu da izmenite ovu uslugu",
         403
@@ -119,7 +185,7 @@ export async function PUT(
 
     // Izmeni uslugu
     const updatedService = await prisma.service.update({
-      where: { id: params.id },
+      where: { id: (await params).id },
       data: validatedData,
       include: {
         provider: {
@@ -156,7 +222,7 @@ export async function PUT(
  */
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getCurrentUser();
@@ -166,13 +232,13 @@ export async function DELETE(
     }
 
     // 🛡 VALIDACIJA UUID
-    if (!validateUUID(params.id)) {
+    if (!validateUUID((await params).id)) {
       return errorResponse("Nevalidan ID format", 400);
     }
 
     // Pronađi uslugu
     const existingService = await prisma.service.findUnique({
-      where: { id: params.id },
+      where: { id: (await params).id },
       include: {
         bookings: {
           where: {
@@ -190,7 +256,7 @@ export async function DELETE(
 
     // 🛡 IDOR ZAŠTITA - Proveri vlasništvo
     if (existingService.providerId !== user.id && user.role !== UserRole.ADMIN) {
-      console.warn(`IDOR attempt: User ${user.id} tried to delete service ${params.id} owned by ${existingService.providerId}`);
+      console.warn(`IDOR attempt: User ${user.id} tried to delete service ${(await params).id} owned by ${existingService.providerId}`);
       return errorResponse(
         "Nemate dozvolu da obrišete ovu uslugu",
         403
@@ -207,7 +273,7 @@ export async function DELETE(
 
     // Soft delete (postavi isActive na false)
     await prisma.service.update({
-      where: { id: params.id },
+      where: { id: (await params).id },
       data: { isActive: false },
     });
 

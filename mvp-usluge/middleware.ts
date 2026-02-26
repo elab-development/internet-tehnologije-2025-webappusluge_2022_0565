@@ -19,6 +19,13 @@ export default withAuth(
       }
     }
 
+    // 🛡 Role-based zaštita za /admin rute
+    if (req.nextUrl.pathname.startsWith('/admin')) {
+      if (req.nextauth.token?.role !== 'ADMIN') {
+        return NextResponse.redirect(new URL('/unauthorized', req.url));
+      }
+    }
+
     return NextResponse.next();
   },
   {
@@ -35,6 +42,7 @@ export default withAuth(
           "/api/health",
           "/api/docs",
           "/api/geocode",
+          "/api/cron", // Dozvoli cron rute (one imaju sopstvenu zaštitu preko CRON_SECRET)
         ];
 
         // Proveri da li je ruta javna
@@ -47,8 +55,20 @@ export default withAuth(
           return true;
         }
 
-        // Ostale API rute zahtevaju autentifikaciju
+        // API rute zahtevaju autentifikaciju (osim javnih)
         if (path.startsWith("/api/") && !isPublicRoute) {
+          return !!token;
+        }
+
+        // Dashboard/Admin/Calendar/Workers rute zahtevaju autentifikaciju
+        const protectedRoutes = ["/dashboard", "/admin", "/calendar", "/workers"];
+        const isProtectedRoute = protectedRoutes.some(route => path.startsWith(route));
+
+        if (isProtectedRoute) {
+          // DEBUG: Log kada korisnik pokušava da pristupa zaštićenoj ruti
+          if (process.env.NODE_ENV === "development") {
+            console.log(`[MIDDLEWARE] Protected route: ${path}, Has token: ${!!token}`);
+          }
           return !!token;
         }
 
@@ -66,6 +86,8 @@ export const config = {
   matcher: [
     "/api/:path*",
     "/dashboard/:path*",
-    "/(dashboard)/:path*",
+    "/admin/:path*",
+    "/calendar/:path*",
+    "/workers/:path*",
   ],
 };
