@@ -10,7 +10,10 @@
     "test": "jest",
     "type-check": "tsc --noEmit",
     "db:seed": "tsx prisma/seed.ts",
-    "doc": "tsx scripts/generate-swagger.ts"
+    "doc": "tsx scripts/generate-swagger.ts",
+    "prisma:push": "./node_modules/.bin/prisma db push",
+    "prisma:migrate": "./node_modules/.bin/prisma migrate deploy",
+    "prisma:generate": "./node_modules/.bin/prisma generate"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

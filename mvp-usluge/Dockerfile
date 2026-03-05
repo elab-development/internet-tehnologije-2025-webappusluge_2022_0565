@@ -41,7 +41,7 @@ COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
 # Copy init script
 COPY docker-init.sh /app/docker-init.sh
-RUN chmod +x /app/docker-init.sh
+RUN sed -i 's/\r//' /app/docker-init.sh && chmod +x /app/docker-init.sh
 
 EXPOSE 3000
 

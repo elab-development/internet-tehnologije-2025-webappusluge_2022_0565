@@ -49,7 +49,7 @@ export const createRateLimit = redis
 export const guestSearchRateLimit = redis
     ? new Ratelimit({
         redis,
-        limiter: Ratelimit.fixedWindow(20, '24 h'), // Maksimalno 20 pretraga po danu
+        limiter: Ratelimit.fixedWindow(1000, '24 h'), // Maksimalno 1000 pretraga po danu (visoko za razvoj)
         analytics: true,
         prefix: 'ratelimit:guestSearch',
     })
